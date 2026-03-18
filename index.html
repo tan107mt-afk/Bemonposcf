@@ -7305,7 +7305,7 @@ function wmSyncOneDrive(){
           btn.innerHTML='✅ Xong! (' + nlData.length + ' NL, ' + tphData.length + ' TP)';
           btn.disabled=false;
           setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
-          if(typeof showToast==='function') showToast('✅ Đã nhập ' + data.length + ' nguyên liệu từ ' + file.name);
+          if(typeof showToast==='function') showToast('✅ Đã nhập', nlData.length + ' NL, ' + tphData.length + ' TP từ ' + file.name);
         })
         .catch(function(err){
           btn.innerHTML='❌ Lỗi!';
