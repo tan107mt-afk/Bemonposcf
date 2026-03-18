@@ -1499,6 +1499,7 @@ footer strong{color:var(--green-light);}
       <div class="panel-title">Thành Phẩm Hủy</div>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <button onclick="tphSyncFile()" id="tph-sync-btn" style="padding:7px 14px;background:#0078d4;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">&#9729; Nhập file Excel</button>
       <button onclick="tphSave()" style="padding:7px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">💾 Lưu</button>
     </div>
   </div>
@@ -7075,6 +7076,141 @@ function wmParseExcel(buf){
     s.onerror = function(){ reject(new Error('Không tải được thư viện Excel')); };
     document.head.appendChild(s);
   });
+}
+
+
+function tphParseExcel(buf){
+  return new Promise(function(resolve,reject){
+    function doparse(){
+      try{
+        var wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+        var sheetName=wb.SheetNames[0];
+        for(var i=0;i<wb.SheetNames.length;i++){
+          var sn=wb.SheetNames[i].toLowerCase();
+          if(sn==='sg2'||sn.includes('th\u00e0nh ph\u1ea9m')||sn.includes('tph')){sheetName=wb.SheetNames[i];break;}
+        }
+        var sheet=wb.Sheets[sheetName];
+        if(!sheet){reject(new Error('Kh\u00f4ng t\u00ecm th\u1ea5y sheet'));return;}
+        var rawRows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null,raw:true});
+        var fmtRows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null,raw:false});
+        console.log('[tphParse] Sheet:',sheetName,'Rows:',rawRows.length);
+
+        // Detect columns from header row
+        var headerRow=rawRows[0]||[];
+        var colNgay=0,colTen=4,colDvt=5,colSL=9,colPhanLoai=-1;
+        for(var c=0;c<headerRow.length;c++){
+          var h=String(headerRow[c]||'').toLowerCase().trim();
+          if(h.includes('ng\u00e0y')||h==='ngay') colNgay=c;
+          else if((h.includes('t\u00ean')||h.includes('s\u1ea3n ph\u1ea9m'))&&!h.includes('nh\u00e2n')) colTen=c;
+          else if(h.includes('\u0111\u01a1n v\u1ecb')||h==='dvt') colDvt=c;
+          else if(h.includes('h\u1ebft h\u1ea1n')||h.includes('h\u1ee7y')) colSL=c;
+          else if(h.includes('ph\u00e2n lo\u1ea1i')||h.includes('lo\u1ea1i')) colPhanLoai=c;
+        }
+        console.log('[tphParse] Cols: ngay='+colNgay+' ten='+colTen+' dvt='+colDvt+' sl='+colSL);
+
+        var curYear=new Date().getFullYear();
+        var map={};
+        var parsed=0;
+
+        for(var rowIdx=1;rowIdx<rawRows.length;rowIdx++){
+          var row=rawRows[rowIdx];
+          var fmtRow=fmtRows[rowIdx]||[];
+          if(!row||!Array.isArray(row)) continue;
+
+          var tenSP=String(row[colTen]!=null?row[colTen]:'').trim();
+          var dvt=String(row[colDvt]!=null?row[colDvt]:'').trim();
+          var slHuy=parseFloat(row[colSL])||0;
+
+          if(colPhanLoai>=0){
+            var pl=String(row[colPhanLoai]||'').toLowerCase().trim();
+            if(pl==='n\u01b0\u1edbc_tea'||pl==='nuoc_tea') continue;
+          }
+          if(!tenSP||tenSP.length<2) continue;
+          if(slHuy<=0) continue;
+
+          var ngayRaw=row[colNgay];
+          var ngayFmt=fmtRow[colNgay];
+          var d=null;
+          if(ngayRaw instanceof Date){d=ngayRaw;}
+          else if(typeof ngayRaw==='number'&&ngayRaw>40000&&ngayRaw<60000){
+            d=new Date(Math.round((ngayRaw-25569)*86400*1000));
+          } else {
+            var s=String(ngayFmt||ngayRaw||'').trim();
+            if(s){
+              var m1=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+              if(m1) d=new Date(+m1[3],+m1[1]-1,+m1[2]);
+              if(!d){var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2) d=new Date(+m2[1],+m2[2]-1,+m2[3]);}
+              if(!d) d=new Date(s);
+            }
+          }
+          if(!d||isNaN(d.getTime())) continue;
+          if(d.getFullYear()!==curYear) continue;
+
+          var mo=d.getMonth();
+          var key=tenSP.toLowerCase();
+          if(!map[key]) map[key]={name:tenSP,unit:dvt||'',months:[0,0,0,0,0,0,0,0,0,0,0,0]};
+          map[key].months[mo]+=slHuy;
+          parsed++;
+        }
+
+        var result=Object.values(map);
+        console.log('[tphParse] Done:',result.length,'products, parsed:',parsed);
+        if(result.length===0){
+          reject(new Error('Kh\u00f4ng t\u00ecm th\u1ea5y d\u1eef li\u1ec7u n\u0103m '+curYear));
+          return;
+        }
+        resolve(result);
+      }catch(e){
+        console.error('[tphParse] Error:',e.message);
+        reject(new Error('L\u1ed7i \u0111\u1ecdc file: '+e.message));
+      }
+    }
+    if(typeof XLSX!=='undefined'){doparse();return;}
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=doparse;
+    s.onerror=function(){reject(new Error('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c th\u01b0 vi\u1ec7n'));};
+    document.head.appendChild(s);
+  });
+}
+
+function tphSyncFile(){
+  var btn=document.getElementById('tph-sync-btn');
+  var origHtml=btn.innerHTML;
+  btn.disabled=true;
+  var inp=document.createElement('input');
+  inp.type='file';inp.accept='.xlsx,.xls,.xlsm';
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=function(){
+    var file=inp.files[0];
+    document.body.removeChild(inp);
+    if(!file){btn.disabled=false;btn.innerHTML=origHtml;return;}
+    btn.innerHTML='\u23f3 \u0110ang \u0111\u1ecdc '+file.name+'...';
+    var reader=new FileReader();
+    reader.onload=function(e){
+      tphParseExcel(e.target.result)
+        .then(function(products){
+          if(!products||products.length===0) throw new Error('Kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u');
+          var existing=tphLoad();
+          existing.products=products;
+          tphSaveData(existing);
+          tphRender();
+          btn.innerHTML='\u2705 Xong! ('+products.length+' SP)';
+          btn.disabled=false;
+          setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
+          if(typeof showToast==='function') showToast('\u2705 \u0110\u00e3 nh\u1eadp','\u0110\u00e3 c\u1eadp nh\u1eadt '+products.length+' s\u1ea3n ph\u1ea9m h\u1ee7y t\u1eeb Excel');
+        })
+        .catch(function(err){
+          btn.innerHTML='\u274c '+err.message;
+          btn.disabled=false;
+          setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},4000);
+          if(typeof showToast==='function') showToast('\u274c L\u1ed7i \u0111\u1ecdc file',err.message);
+        });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  inp.click();
 }
 
 function wmSyncOneDrive(){
