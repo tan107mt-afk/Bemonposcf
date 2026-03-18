@@ -7024,83 +7024,85 @@ function wmParseExcel(buf){
   return new Promise(function(resolve, reject){
     function doparse(){
       try {
+        // Read with cellDates:true so dates come as JS Date objects
         var wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true});
         var sheet = wb.Sheets['SG2'] || wb.Sheets[wb.SheetNames[0]];
         if(!sheet) { reject(new Error('Không tìm thấy sheet SG2')); return; }
-        var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:'', raw:false});
         
-        // Debug: log first few rows
-        console.log('Total rows:', rows.length);
-        if(rows.length > 0) console.log('Header:', JSON.stringify(rows[0]));
-        if(rows.length > 1) console.log('Row1:', JSON.stringify(rows[1]));
-        
+        // Use raw:true to get actual values (Date objects, numbers, strings)
+        var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null, raw:true});
+        console.log('Total rows:', rows.length, 'First row:', JSON.stringify(rows[0]));
+        if(rows.length > 1) console.log('Row1:', JSON.stringify(rows[1]?.slice(0,10)));
+
         var result = {};
-        var skipped = 0;
-        
+        var skipped = 0, parsed = 0;
+
         rows.forEach(function(row, rowIdx){
-          if(!row || row.length === 0) return;
+          if(!row) return;
           
-          // Col 0: Ngày (date string "1/1/2026" or Date object)
-          // Col 2: Phân loại
-          // Col 4: Tên NL
-          // Col 5: ĐVT  
-          // Col 9: Hết hạn (SL hủy)
-          
+          // Col 0=Ngày, Col 2=Phân loại, Col 4=Tên NL, Col 5=ĐVT, Col 9=Hết hạn(SL hủy)
           var ngayRaw = row[0];
           var phanLoai = String(row[2]||'').trim().toLowerCase();
           var tenNL = String(row[4]||'').trim();
           var dvt = String(row[5]||'').trim().toLowerCase();
-          var slHuy = parseFloat(String(row[9]||'0').replace(',','.')) || 0;
-          
-          // Skip header row and empty rows
+          var slHuyRaw = row[9];
+          var slHuy = (slHuyRaw === null || slHuyRaw === undefined || slHuyRaw === '') ? 0 : parseFloat(slHuyRaw) || 0;
+
+          // Skip header and empty
           if(!tenNL || tenNL === 'Tên Nguyên liệu' || tenNL === 'Tên NL') return;
-          if(rowIdx === 0) return; // skip header
+          if(rowIdx === 0) return;
+          if(!ngayRaw) return;
           
-          // Skip nước_tea category
+          // Skip nước_tea
           if(phanLoai === 'nước_tea') { skipped++; return; }
           
-          // Skip rows with no quantity
+          // Skip zero quantity
           if(slHuy === 0) return;
-          
-          // Parse date - can be "1/1/2026", "2026-01-01", or Excel serial number
+
+          // Parse date - SheetJS with cellDates:true returns JS Date objects
           var d = null;
-          if(ngayRaw instanceof Date || (typeof ngayRaw === 'object' && ngayRaw !== null)) {
+          if(ngayRaw instanceof Date) {
+            d = ngayRaw;
+          } else if(typeof ngayRaw === 'number') {
+            // Excel serial number (fallback if cellDates didn't work)
+            // Excel epoch: Jan 0 1900 = serial 0
+            d = new Date(Math.round((ngayRaw - 25569) * 86400 * 1000));
+          } else if(typeof ngayRaw === 'string') {
+            // Try various string formats
             d = new Date(ngayRaw);
-          } else if(typeof ngayRaw === 'number' && ngayRaw > 1000) {
-            // Excel serial date
-            d = new Date((ngayRaw - 25569) * 86400 * 1000);
-          } else if(typeof ngayRaw === 'string' && ngayRaw) {
-            // Try parsing string date formats
-            var parts = ngayRaw.split(/[\/\-\.]/);
-            if(parts.length === 3) {
-              var y = parts[2].length === 4 ? parseInt(parts[2]) : parseInt(parts[0]);
-              var m = parts[2].length === 4 ? parseInt(parts[1])-1 : parseInt(parts[1])-1;
-              var dd = parts[2].length === 4 ? parseInt(parts[0]) : parseInt(parts[2]);
-              if(ngayRaw.indexOf('/') > 0) { // M/D/Y format
-                m = parseInt(parts[0])-1;
-                dd = parseInt(parts[1]);
-                y = parseInt(parts[2]);
+            if(isNaN(d)) {
+              // Try M/D/YYYY
+              var p = ngayRaw.split(/[\/-]/);
+              if(p.length===3) {
+                if(p[2].length===4) d = new Date(parseInt(p[2]), parseInt(p[0])-1, parseInt(p[1]));
+                else d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
               }
-              d = new Date(y, m, dd);
-            } else {
-              d = new Date(ngayRaw);
             }
           }
-          
-          if(!d || isNaN(d.getTime())) { skipped++; return; }
-          
-          var ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+
+          if(!d || isNaN(d.getTime())) return;
+
+          var yr = d.getFullYear();
+          var mo = d.getMonth() + 1;
+          if(yr < 2020 || yr > 2030) return; // sanity check
+
+          var ym = yr + '-' + String(mo).padStart(2,'0');
           var key = tenNL.toLowerCase() + '|' + dvt;
           if(!result[key]) result[key] = {tenNL:tenNL, dvt:dvt, thang:{}};
           result[key].thang[ym] = (result[key].thang[ym]||0) + slHuy;
+          parsed++;
         });
-        
+
         var arr = Object.values(result);
-        console.log('Parsed:', arr.length, 'items, skipped:', skipped);
+        console.log('✅ Parsed:', arr.length, 'NL, rows processed:', parsed, 'skipped:', skipped);
+        if(arr.length === 0) {
+          reject(new Error('Không đọc được dữ liệu - kiểm tra sheet SG2 và cột dữ liệu'));
+          return;
+        }
         resolve(arr);
       } catch(e){
-        console.error('Parse error:', e);
-        reject(e);
+        console.error('Parse error:', e.message, e.stack);
+        reject(new Error('Lỗi parse: ' + e.message));
       }
     }
     if(typeof XLSX!=='undefined'){ doparse(); return; }
