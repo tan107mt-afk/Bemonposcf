@@ -1451,7 +1451,7 @@ footer strong{color:var(--green-light);}
       <div class="panel-title">Nguyên Liệu Hủy</div>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <button onclick="wmSyncOneDrive()" id="wm-sync-btn" style="padding:7px 14px;background:#0078d4;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">&#9729; Đồng bộ OneDrive</button>
+      <button onclick="wmSyncOneDrive()" id="wm-sync-btn" style="padding:7px 14px;background:#0078d4;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">&#9729; Nhập file Excel</button>
       <button onclick="wmAddRow()" style="padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">+ Thêm dòng</button>
       <button onclick="wmSave()" style="padding:7px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">&#128190; Lưu</button>
     </div>
@@ -7051,103 +7051,70 @@ function wmParseExcel(buf){
   });
 }
 
-function wmConvertShareUrl(shareUrl) {
-  // Convert SharePoint share link to direct download URL
-  // Support multiple formats
-  var url = shareUrl.trim();
-  
-  // Format 1: SharePoint share link (:x: = xlsx, :f: = folder)
-  // https://xxx.sharepoint.com/:x:/g/personal/user/XXXXX
-  // → https://xxx.sharepoint.com/:x:/g/personal/user/XXXXX?download=1
-  if(url.match(/sharepoint\.com\/:([xwpbufr]):/i)) {
-    var base = url.split('?')[0];
-    return base + '?download=1';
-  }
-  
-  // Format 2: OneDrive share link
-  // https://1drv.ms/x/s!... or https://onedrive.live.com/...
-  if(url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
-    return url + (url.includes('?') ? '&' : '?') + 'download=1';
-  }
-  
-  // Format 3: Already a direct download link
-  return url;
-}
-
-function wmFetchWithProxy(url) {
-  // Try multiple CORS proxies in order
-  var proxies = [
-    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
-    function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
-    function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
-    function(u){ return u; } // Try direct last
-  ];
-  
-  var attempt = function(idx) {
-    if(idx >= proxies.length) return Promise.reject(new Error('Tất cả proxy đều thất bại'));
-    var proxyUrl = proxies[idx](url);
-    return fetch(proxyUrl, {method:'GET'})
-      .then(function(r){
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        return r.arrayBuffer();
-      })
-      .catch(function(e){
-        console.log('Proxy '+idx+' failed:', e.message, '- trying next...');
-        return attempt(idx+1);
-      });
-  };
-  return attempt(0);
-}
-
 function wmSyncOneDrive(){
   var btn=document.getElementById('wm-sync-btn');
   var origHtml=btn.innerHTML;
   btn.disabled=true;
 
-  var branch = (typeof currentUser!=='undefined' && currentUser && currentUser.branch) ? currentUser.branch : 'default';
-  var storageKey = 'zentea_share_url_' + branch;
-  
-  var shareUrl = prompt(
-    '📂 Dán link chia sẻ file Excel từ OneDrive/SharePoint:\n\n' +
-    '👉 Cách lấy link:\n' +
-    '1. Mở file Excel trên SharePoint/OneDrive\n' +
-    '2. Click Share (Chia sẻ)\n' +
-    '3. Chọn "Anyone with the link can view"\n' +
-    '4. Click Copy link\n\n' +
-    '⚠️ Link phải có quyền "Anyone can view"',
-    localStorage.getItem(storageKey) || ''
-  );
+  // Tạo hidden file input để upload file Excel từ máy tính
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.xlsx,.xls,.xlsm';
+  inp.style.display = 'none';
+  document.body.appendChild(inp);
 
-  if(!shareUrl || !shareUrl.trim()){
-    btn.disabled=false; btn.innerHTML=origHtml; return;
-  }
-  shareUrl = shareUrl.trim();
-  localStorage.setItem(storageKey, shareUrl);
+  inp.onchange = function(){
+    var file = inp.files[0];
+    document.body.removeChild(inp);
+    if(!file){ btn.disabled=false; btn.innerHTML=origHtml; return; }
 
-  btn.innerHTML='⏳ Đang tải...';
+    btn.innerHTML='⏳ Đang đọc ' + file.name + '...';
 
-  var downloadUrl = wmConvertShareUrl(shareUrl);
-  
-  wmFetchWithProxy(downloadUrl)
-    .then(function(buf){
-      return wmParseExcel(buf);
-    })
-    .then(function(data){
-      if(!data||data.length===0) throw new Error('Không đọc được dữ liệu từ file');
-      wmSaveData(data);
-      wmRender();
-      btn.innerHTML='✅ Xong!';
-      btn.disabled=false;
-      setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
-      if(typeof showToast==='function') showToast('✅ Đã đồng bộ '+data.length+' nguyên liệu!');
-    })
-    .catch(function(err){
-      console.error('Sync error:',err);
+    var reader = new FileReader();
+    reader.onload = function(e){
+      wmParseExcel(e.target.result)
+        .then(function(data){
+          if(!data||data.length===0) throw new Error('Không đọc được dữ liệu');
+          wmSaveData(data);
+          wmRender();
+          btn.innerHTML='✅ Xong! (' + data.length + ' NL)';
+          btn.disabled=false;
+          setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
+          if(typeof showToast==='function') showToast('✅ Đã nhập ' + data.length + ' nguyên liệu từ ' + file.name);
+        })
+        .catch(function(err){
+          btn.innerHTML='❌ Lỗi!';
+          btn.disabled=false;
+          setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
+          alert('❌ Lỗi đọc file: ' + err.message);
+        });
+    };
+    reader.onerror = function(){
       btn.innerHTML='❌ Lỗi!';
       btn.disabled=false;
       setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
-      alert('❌ Lỗi đồng bộ: '+err.message+'\n\n💡 Kiểm tra:\n- Link có quyền "Anyone with link can view"\n- Copy đúng link từ nút Share');
-    });
+      alert('❌ Không đọc được file');
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  inp.oncancel = function(){
+    document.body.removeChild(inp);
+    btn.disabled=false;
+    btn.innerHTML=origHtml;
+  };
+
+  // Mở file picker
+  inp.click();
+  
+  // Fallback nếu oncancel không trigger
+  setTimeout(function(){
+    if(btn.disabled && inp.parentNode){
+      document.body.removeChild(inp);
+      btn.disabled=false;
+      btn.innerHTML=origHtml;
+    }
+  }, 60000);
 }
 
 
