@@ -7019,37 +7019,84 @@ async function odReadExcelFromOneDrive(token, fileName) {
 
 // ── Main sync ────────────────────────────────────────────────────
 async 
+
 function wmParseExcel(buf){
   return new Promise(function(resolve, reject){
-    try {
-      // Load SheetJS dynamically if not loaded
-      function doparse(){
+    function doparse(){
+      try {
         var wb = XLSX.read(new Uint8Array(buf), {type:'array'});
         var sheet = wb.Sheets['SG2'] || wb.Sheets[wb.SheetNames[0]];
         var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
         var result = {};
         rows.forEach(function(row){
-          var ngay = row[0]; var phanLoai = String(row[2]||'').trim().toLowerCase();
-          var tenNL = String(row[4]||'').trim(); var dvt = String(row[5]||'').trim().toLowerCase();
-          var slHuy = parseFloat(row[9]) || 0;
-          if(!tenNL || !ngay || phanLoai === 'nước_tea') return;
-          var d = new Date(1900, 0, ngay - 1);
+          var ngay=row[0], phanLoai=String(row[2]||'').trim().toLowerCase();
+          var tenNL=String(row[4]||'').trim(), dvt=String(row[5]||'').trim().toLowerCase();
+          var slHuy=parseFloat(row[9])||0;
+          if(!tenNL||!ngay||phanLoai==='nước_tea') return;
+          var d=new Date(1900,0,ngay-1);
           if(isNaN(d.getTime())) return;
-          var ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-          var key = tenNL.toLowerCase() + '|' + dvt;
-          if(!result[key]) result[key] = {tenNL:tenNL, dvt:dvt, thang:{}};
-          result[key].thang[ym] = (result[key].thang[ym]||0) + slHuy;
+          var ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+          var key=tenNL.toLowerCase()+'|'+dvt;
+          if(!result[key]) result[key]={tenNL:tenNL,dvt:dvt,thang:{}};
+          result[key].thang[ym]=(result[key].thang[ym]||0)+slHuy;
         });
         resolve(Object.values(result));
-      }
-      if(typeof XLSX !== 'undefined'){ doparse(); return; }
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = doparse;
-      s.onerror = function(){ reject(new Error('Không tải được SheetJS')); };
-      document.head.appendChild(s);
-    } catch(e){ reject(e); }
+      } catch(e){ reject(e); }
+    }
+    if(typeof XLSX!=='undefined'){ doparse(); return; }
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=doparse; s.onerror=function(){reject(new Error('Không tải được SheetJS'));};
+    document.head.appendChild(s);
   });
+}
+
+function wmConvertShareUrl(shareUrl) {
+  // Convert SharePoint share link to direct download URL
+  // Support multiple formats
+  var url = shareUrl.trim();
+  
+  // Format 1: SharePoint share link (:x: = xlsx, :f: = folder)
+  // https://xxx.sharepoint.com/:x:/g/personal/user/XXXXX
+  // → https://xxx.sharepoint.com/:x:/g/personal/user/XXXXX?download=1
+  if(url.match(/sharepoint\.com\/:([xwpbufr]):/i)) {
+    var base = url.split('?')[0];
+    return base + '?download=1';
+  }
+  
+  // Format 2: OneDrive share link
+  // https://1drv.ms/x/s!... or https://onedrive.live.com/...
+  if(url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+    return url + (url.includes('?') ? '&' : '?') + 'download=1';
+  }
+  
+  // Format 3: Already a direct download link
+  return url;
+}
+
+function wmFetchWithProxy(url) {
+  // Try multiple CORS proxies in order
+  var proxies = [
+    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+    function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+    function(u){ return u; } // Try direct last
+  ];
+  
+  var attempt = function(idx) {
+    if(idx >= proxies.length) return Promise.reject(new Error('Tất cả proxy đều thất bại'));
+    var proxyUrl = proxies[idx](url);
+    return fetch(proxyUrl, {method:'GET'})
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.arrayBuffer();
+      })
+      .catch(function(e){
+        console.log('Proxy '+idx+' failed:', e.message, '- trying next...');
+        return attempt(idx+1);
+      });
+  };
+  return attempt(0);
 }
 
 function wmSyncOneDrive(){
@@ -7057,61 +7104,52 @@ function wmSyncOneDrive(){
   var origHtml=btn.innerHTML;
   btn.disabled=true;
 
-  // Hỏi user paste link SharePoint/OneDrive
+  var branch = (typeof currentUser!=='undefined' && currentUser && currentUser.branch) ? currentUser.branch : 'default';
+  var storageKey = 'zentea_share_url_' + branch;
+  
   var shareUrl = prompt(
-    'Dán link chia sẻ OneDrive/SharePoint của file Excel vào đây:\n\n' +
-    'Cách lấy link: Mở file trên SharePoint → Share → Copy link\n' +
-    '(Link dạng: https://...sharepoint.com/...)',
-    localStorage.getItem('zentea_share_url_' + (currentUser?.branch||'')) || ''
+    '📂 Dán link chia sẻ file Excel từ OneDrive/SharePoint:\n\n' +
+    '👉 Cách lấy link:\n' +
+    '1. Mở file Excel trên SharePoint/OneDrive\n' +
+    '2. Click Share (Chia sẻ)\n' +
+    '3. Chọn "Anyone with the link can view"\n' +
+    '4. Click Copy link\n\n' +
+    '⚠️ Link phải có quyền "Anyone can view"',
+    localStorage.getItem(storageKey) || ''
   );
 
   if(!shareUrl || !shareUrl.trim()){
     btn.disabled=false; btn.innerHTML=origHtml; return;
   }
   shareUrl = shareUrl.trim();
-  localStorage.setItem('zentea_share_url_' + (currentUser?.branch||''), shareUrl);
+  localStorage.setItem(storageKey, shareUrl);
 
   btn.innerHTML='⏳ Đang tải...';
 
-  // Convert SharePoint share URL to direct download URL
-  // Format: https://xxx.sharepoint.com/:x:/g/... → add ?download=1
-  // Or use the file's direct URL with cors proxy
-  var downloadUrl = shareUrl;
+  var downloadUrl = wmConvertShareUrl(shareUrl);
   
-  // If it's a share link (:x:, :f: etc), convert to download
-  if(shareUrl.includes('/:x:/') || shareUrl.includes('/:f:/')) {
-    // Try direct download by appending &download=1
-    downloadUrl = shareUrl.replace(/\?.*$/,'') + '?download=1';
-  }
-
-  // Use cors proxy to bypass CORS
-  var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(downloadUrl);
-
-  fetch(proxyUrl)
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      return r.arrayBuffer();
-    })
+  wmFetchWithProxy(downloadUrl)
     .then(function(buf){
       return wmParseExcel(buf);
     })
     .then(function(data){
-      if(!data || data.length === 0) throw new Error('Không đọc được dữ liệu');
+      if(!data||data.length===0) throw new Error('Không đọc được dữ liệu từ file');
       wmSaveData(data);
       wmRender();
-      btn.innerHTML='✅ Đồng bộ xong!';
+      btn.innerHTML='✅ Xong!';
       btn.disabled=false;
       setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
-      showToast('✅ Đã đồng bộ ' + data.length + ' nguyên liệu từ OneDrive!');
+      if(typeof showToast==='function') showToast('✅ Đã đồng bộ '+data.length+' nguyên liệu!');
     })
     .catch(function(err){
-      console.error('Sync error:', err);
+      console.error('Sync error:',err);
       btn.innerHTML='❌ Lỗi!';
       btn.disabled=false;
       setTimeout(function(){btn.innerHTML=origHtml;btn.disabled=false;},3000);
-      alert('Lỗi đồng bộ: ' + err.message + '\n\nHãy kiểm tra link và quyền chia sẻ (Anyone with link can view)');
+      alert('❌ Lỗi đồng bộ: '+err.message+'\n\n💡 Kiểm tra:\n- Link có quyền "Anyone with link can view"\n- Copy đúng link từ nút Share');
     });
 }
+
 
 </script>
 </body>
