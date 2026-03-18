@@ -6551,7 +6551,8 @@ function rptRender(){
   if(!sel) return;
   var yr=parseInt(sel.value)||new Date().getFullYear();
 
-  var tphData=tphLoad();
+  var tphData=tphLoad();            // old (giữ cho reasons chart nếu có)
+  var tphMainData=tphMainLoad();    // NEW: sản phẩm hủy từ Excel
   var wmData=wmLoadData();
 
   // Build 12-month keys for this year
@@ -6561,16 +6562,30 @@ function rptRender(){
   });
   var monthLabels=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
-  // ── TP hủy tổng từng tháng (sum reasons)
-  var tpByMonth=months.map(function(mk,mi){
-    return tphData.reasons.reduce(function(s,r){return s+(r.months[mi]||0);},0);
-  });
+  // ── TP hủy tổng từng tháng: ưu tiên tphMainData (Excel), fallback tphData.reasons
+  var tpByMonth;
+  if(tphMainData && tphMainData.length>0){
+    tpByMonth=months.map(function(mk,mi){
+      return tphMainData.reduce(function(s,r){return s+(r.months[mi]||0);},0);
+    });
+  } else {
+    tpByMonth=months.map(function(mk,mi){
+      return (tphData.reasons||[]).reduce(function(s,r){return s+(r.months[mi]||0);},0);
+    });
+  }
   var tpTotal=tpByMonth.reduce(function(s,v){return s+v;},0);
 
-  // ── TP lý do tổng cả năm
-  var tpReasonYr=tphData.reasons.map(function(r){
-    return {name:r.name,val:r.months.reduce(function(s,v){return s+v;},0)};
-  }).filter(function(x){return x.val>0;});
+  // ── TP lý do tổng cả năm (từ tphData.reasons nếu có, không thì từ tphMainData)
+  var tpReasonYr;
+  if(tphData.reasons && tphData.reasons.length>0 && tphData.reasons.some(function(r){return r.months.some(function(v){return v>0;});})){
+    tpReasonYr=tphData.reasons.map(function(r){
+      return {name:r.name,val:r.months.reduce(function(s,v){return s+v;},0)};
+    }).filter(function(x){return x.val>0;});
+  } else {
+    tpReasonYr=tphMainData.map(function(r){
+      return {name:r.name,val:r.months.reduce(function(s,v){return s+v;},0)};
+    }).filter(function(x){return x.val>0;}).slice(0,8);
+  }
 
   // ── NL hủy: số lượng mặt hàng có giá trị > 0 từng tháng
   var nlByMonth=months.map(function(mk,mi){
