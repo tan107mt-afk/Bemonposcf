@@ -3214,6 +3214,18 @@ function loginSuccess(account, fromSession){
   try { renderEmployees(); } catch(e){}
   // Load all branch-specific data
   try { loadBranchData().then(function(){ try{ applyAllContentEdits(); }catch(e){} }).catch(e=>{}); } catch(e){}
+  // Auto-seed TPH: nếu tph-main rỗng, lấy từ tph-excel (filter unit=Ly)
+  try {
+    var _tphCur = tphMainLoad();
+    if(_tphCur.length === 0){
+      var _exRaw = localStorage.getItem(branchKey(TPH_STORAGE_KEY));
+      if(_exRaw){
+        var _exData = JSON.parse(_exRaw);
+        var _lyItems = (_exData.products||[]).filter(function(r){ return (r.unit||'').toLowerCase()==='ly'; });
+        if(_lyItems.length > 0){ tphMainSave(_lyItems); }
+      }
+    }
+  } catch(e){}
 }
 
 function doLogout(){
