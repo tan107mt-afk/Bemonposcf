@@ -150,29 +150,30 @@ body.logged-in #topnav-login-hint{ display:none !important; }
 
 /* Branch badge */
 .nav-branch{
-  margin-left:auto;padding:0 12px 0 0;display:flex;align-items:center;flex-shrink:0;
+  margin-left:auto;padding:0 16px 0 0;display:flex;align-items:center;flex-shrink:0;
 }
 .nav-branch-inner{
   display:flex;align-items:center;gap:0;
-  background:rgba(255,255,255,.15);
-  border:1px solid rgba(255,255,255,.25);
-  border-radius:20px;overflow:hidden;
+  background:rgba(255,255,255,.18);
+  border:1.5px solid rgba(255,255,255,.3);
+  border-radius:24px;overflow:hidden;
 }
 .nav-branch-name{
-  display:flex;align-items:center;gap:6px;
-  padding:5px 10px;color:#fff;
-  font-size:12px;font-weight:700;
-  white-space:nowrap;max-width:160px;
+  display:flex;align-items:center;gap:8px;
+  padding:7px 14px;color:#fff;
+  font-size:13px;font-weight:700;
+  white-space:nowrap;max-width:200px;
   overflow:hidden;text-overflow:ellipsis;
 }
 .nav-logout-btn{
-  display:flex;align-items:center;justify-content:center;
-  padding:5px 10px;background:rgba(255,255,255,.1);
-  border:none;border-left:1px solid rgba(255,255,255,.2);
-  color:#fff;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 14px;background:rgba(255,255,255,.12);
+  border:none;border-left:1.5px solid rgba(255,255,255,.2);
+  color:#fff;cursor:pointer;font-size:13px;font-weight:600;
   font-family:'Open Sans',sans-serif;transition:background .15s;
+  white-space:nowrap;
 }
-.nav-logout-btn:hover{ background:rgba(230,80,80,.4); }
+.nav-logout-btn:hover{ background:rgba(230,60,60,.45); }
 
 /* ═══ MAIN ═══ */
 #main{
@@ -412,7 +413,7 @@ footer strong{color:var(--green-light);}
 <nav id="topnav">
   <!-- Logo -->
   <a class="nav-logo" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
-    <div class="nav-logo-icon">Z</div>
+    
   </a>
 
   <!-- Nav items -->
@@ -1477,7 +1478,7 @@ footer strong{color:var(--green-light);}
       <table id="wm-excel-table" style="width:100%;border-collapse:collapse;font-size:12px;font-family:'Open Sans',sans-serif;min-width:1100px;">
         <thead>
           <tr style="background:linear-gradient(135deg,#1e5c1e,var(--green));color:#fff;">
-            <th style="padding:10px 12px;text-align:left;font-weight:700;position:sticky;left:0;background:#2d7a2d;z-index:2;min-width:180px;">Tên nguyên liệu</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:700;position:sticky;left:0;background:#2d7a2d;z-index:2;min-width:180px;"><div style="display:flex;align-items:center;gap:8px;">Tên nguyên liệu<button id="wm-sort-btn" type="button" onclick="wmToggleSort('wm')" style="background:rgba(255,255,255,.2);border:none;border-radius:12px;padding:2px 8px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">↕ Sắp xếp</button></div></th>
             <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 01</th>
             <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 02</th>
             <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 03</th>
@@ -1520,7 +1521,7 @@ footer strong{color:var(--green-light);}
         <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:'Open Sans',sans-serif;min-width:1100px;">
           <thead>
             <tr style="background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;">
-              <th style="padding:10px 12px;text-align:left;font-weight:700;position:sticky;left:0;background:#b91c1c;z-index:2;min-width:200px;">Tên thành phẩm</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:700;position:sticky;left:0;background:#b91c1c;z-index:2;min-width:200px;"><div style="display:flex;align-items:center;gap:8px;">Tên thành phẩm<button id="tph-sort-btn" type="button" onclick="wmToggleSort('tph')" style="background:rgba(255,255,255,.2);border:none;border-radius:12px;padding:2px 8px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">↕ Sắp xếp</button></div></th>
               <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 01</th>
               <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 02</th>
               <th style="padding:10px 8px;text-align:center;font-weight:700;min-width:72px;">Tháng 03</th>
@@ -3178,6 +3179,7 @@ function loginSuccess(account, fromSession){
         </span>
         <button class="nav-logout-btn" onclick="doLogout()" title="Đăng xuất">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Đăng xuất
         </button>
       </div>`;
 
@@ -6346,30 +6348,95 @@ function wmLoadData(){try{var r=localStorage.getItem(branchKey(WM_STORAGE_KEY));
 function wmSaveData(d){try{localStorage.setItem(branchKey(WM_STORAGE_KEY),JSON.stringify(d));}catch(e){}}
 
 function wmRender(){
-  var data=wmLoadData();
-  var tbody=document.getElementById('wm-excel-tbody');
-  var tfoot=document.getElementById('wm-excel-tfoot');
+  var data = wmLoadData();
+  var tbody = document.getElementById('wm-excel-tbody');
+  var tfoot = document.getElementById('wm-excel-tfoot');
   if(!tbody) return;
-  var totals=[0,0,0,0,0,0,0,0,0,0,0,0];
-  var tdBase='padding:7px 8px;font-size:12px;border-bottom:1px solid #edf5e9;';
-  tbody.innerHTML=data.map(function(row,ri){
-    var bg=ri%2===0?'#fff':'#f9fef7';
-    var cells='<td contenteditable="true" style="'+tdBase+'background:'+bg+';font-weight:600;min-width:180px;position:sticky;left:0;z-index:1;" onblur="wmUpdateName('+ri+',this.innerText)">'+row.name+'</td>';
-    for(var m=0;m<12;m++){
-      var v=row.months[m]||0; if(v>0) totals[m]+=v;
-      var cl=v>0?'color:#1a1a1a;':'color:#ddd;';
-      cells+='<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;'+cl+'" onblur="wmUpdateCell('+ri+','+m+',this.innerText)">'+(v>0?v.toLocaleString('vi-VN'):'–')+'</td>';
+
+  // Apply sort
+  var sortDir = window._wmSortDir || 0; // 0=original,1=asc,2=desc
+  var displayData = data.slice();
+  if(sortDir === 1) displayData.sort(function(a,b){ return wmRowSum(a)-wmRowSum(b); });
+  if(sortDir === 2) displayData.sort(function(a,b){ return wmRowSum(b)-wmRowSum(a); });
+
+  var tdBase = 'padding:7px 8px;font-size:12px;border-bottom:1px solid #edf5e9;';
+  tbody.innerHTML = displayData.map(function(row, ri){
+    var bg = ri%2===0 ? '#fff' : '#f9fef7';
+    // Find original index for edit callbacks
+    var origIdx = data.indexOf(row);
+    var cells = '<td contenteditable="true" style="'+tdBase+'background:'+bg+';font-weight:600;min-width:180px;position:sticky;left:0;z-index:1;" onblur="wmUpdateName('+origIdx+',this.innerText)">'+row.name+'</td>';
+    for(var m=0; m<12; m++){
+      var v = row.months[m]||0;
+      cells += '<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;'+(v>0?'color:#1a1a1a;':'color:#ddd;')+'" onblur="wmUpdateCell('+origIdx+','+m+',this.innerText)">'+(v>0?v.toLocaleString('vi-VN'):'–')+'</td>';
     }
-    cells+='<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;color:#666;font-size:11px;" onblur="wmUpdateUnit('+ri+',this.innerText)">'+row.unit+'</td>';
-    cells+='<td style="'+tdBase+'background:'+bg+';text-align:center;padding:4px;"><button type="button" onclick="wmDeleteRow('+ri+')" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px;">×</button></td>';
+    cells += '<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;color:#666;font-size:11px;" onblur="wmUpdateUnit('+origIdx+',this.innerText)">'+row.unit+'</td>';
+    cells += '<td style="'+tdBase+'background:'+bg+';text-align:center;padding:4px;"><button type="button" onclick="wmDeleteRow('+origIdx+')" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px;">×</button></td>';
     return '<tr>'+cells+'</tr>';
   }).join('');
-  // Footer totals
-  var fc='<td style="'+tdBase+'background:#e8f5e2;font-weight:700;position:sticky;left:0;">TỔNG</td>';
-  for(var m=0;m<12;m++) fc+='<td style="'+tdBase+'background:#e8f5e2;text-align:center;font-weight:700;color:var(--green);">'+(totals[m]>0?totals[m].toLocaleString('vi-VN'):'–')+'</td>';
-  fc+='<td style="background:#e8f5e2;"></td><td style="background:#e8f5e2;"></td>';
-  tfoot.innerHTML='<tr>'+fc+'</tr>';
+
+  // Footer = compare row
+  wmRenderCompare('wm', data, tfoot, '#e8f5e2', 'var(--green)', tdBase);
 }
+function wmRowSum(r){ return (r.months||[]).reduce(function(a,b){return a+(b||0);},0); }
+
+function wmToggleSort(prefix){
+  var key = '_'+prefix+'SortDir';
+  window[key] = ((window[key]||0)+1) % 3;
+  if(prefix==='wm') wmRender();
+  else tphMainRender();
+  // Update button label
+  var labels = ['↕ Sắp xếp','↑ Thấp→Cao','↓ Cao→Thấp'];
+  var btn = document.getElementById(prefix+'-sort-btn');
+  if(btn) btn.textContent = labels[window[key]];
+}
+
+function wmRenderCompare(prefix, data, tfoot, bg, color, tdBase){
+  if(!tfoot) return;
+  // Build select options
+  var sel = '<select id="'+prefix+'-cmp-sel" onchange="wmUpdateCompare(\''+prefix+'\')" style="max-width:170px;padding:3px 6px;border-radius:8px;border:1px solid #ccc;font-size:11px;font-family:\'Open Sans\',sans-serif;background:#fff;">';
+  sel += '<option value="">-- Chọn để so sánh --</option>';
+  data.forEach(function(r,i){ sel += '<option value="'+i+'">'+r.name+'</option>'; });
+  sel += '</select>';
+
+  var tdSel = '<td colspan="2" style="'+tdBase+'background:'+bg+';position:sticky;left:0;z-index:1;padding:6px 8px;">'+sel+'</td>';
+  var bars = '<td id="'+prefix+'-cmp-bars" colspan="11" style="'+tdBase+'background:'+bg+';padding:4px 8px;"></td>';
+  var tdUnit = '<td colspan="2" style="background:'+bg+';"></td>';
+  tfoot.innerHTML = '<tr>'+tdSel+bars+tdUnit+'</tr>';
+}
+
+function wmUpdateCompare(prefix){
+  var sel = document.getElementById(prefix+'-cmp-sel');
+  var bars = document.getElementById(prefix+'-cmp-bars');
+  if(!sel||!bars) return;
+  var idx = parseInt(sel.value);
+  if(isNaN(idx)){ bars.innerHTML=''; return; }
+
+  var data = prefix==='wm' ? wmLoadData() : tphMainLoad();
+  var row = data[idx];
+  if(!row){ bars.innerHTML=''; return; }
+
+  var months = row.months||[];
+  var maxVal = Math.max.apply(null, months.map(function(v){return v||0;}));
+  if(maxVal===0){ bars.innerHTML='<span style="color:#aaa;font-size:11px;">Không có dữ liệu</span>'; return; }
+
+  var color = prefix==='wm' ? '#2d7a2d' : '#dc2626';
+  var barHtml = '<div style="display:flex;align-items:flex-end;gap:3px;height:38px;">';
+  var mLabels = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+  months.forEach(function(v,m){
+    var val = v||0;
+    var pct = maxVal>0 ? Math.round(val/maxVal*100) : 0;
+    var h = Math.max(pct*32/100, val>0?3:0);
+    var tip = mLabels[m]+': '+val.toLocaleString('vi-VN')+(maxVal>0?' ('+pct+'%)':'');
+    barHtml += '<div title="'+tip+'" style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:default;">';
+    barHtml += '<span style="font-size:9px;color:'+color+';font-weight:700;line-height:1;">'+(val>0?pct+'%':'')+'</span>';
+    barHtml += '<div style="width:16px;height:'+h+'px;background:'+color+';border-radius:3px 3px 0 0;opacity:'+(val>0?'0.85':'0.15')+';min-height:2px;"></div>';
+    barHtml += '<span style="font-size:9px;color:#888;line-height:1.2;">'+mLabels[m]+'</span>';
+    barHtml += '</div>';
+  });
+  barHtml += '</div>';
+  bars.innerHTML = barHtml;
+}
+
 function wmUpdateName(ri,v){var d=wmLoadData();if(d[ri])d[ri].name=v.trim();wmSaveData(d);}
 function wmUpdateUnit(ri,v){var d=wmLoadData();if(d[ri])d[ri].unit=v.trim();wmSaveData(d);}
 function wmUpdateCell(ri,mi,v){var d=wmLoadData();if(d[ri])d[ri].months[mi]=parseFloat(v.replace(/[^\d.]/g,''))||0;wmSaveData(d);}
@@ -7028,33 +7095,36 @@ function tphMainRender(){
   var tbody = document.getElementById('tph-main-tbody');
   var tfoot = document.getElementById('tph-main-tfoot');
   if(!tbody) return;
-  var totals = [0,0,0,0,0,0,0,0,0,0,0,0];
+
+  var sortDir = window._tphSortDir || 0;
+  var displayData = data.slice();
+  if(sortDir === 1) displayData.sort(function(a,b){ return wmRowSum(a)-wmRowSum(b); });
+  if(sortDir === 2) displayData.sort(function(a,b){ return wmRowSum(b)-wmRowSum(a); });
+
   var tdBase = 'padding:7px 8px;font-size:12px;border-bottom:1px solid #fee2e2;';
+
   if(data.length === 0){
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:#bbb;font-size:13px;">Chưa có dữ liệu — nhấn <strong>☁ Nhập file Excel</strong> để tải lên</td></tr>';
     if(tfoot) tfoot.innerHTML = '';
     return;
   }
-  tbody.innerHTML = data.map(function(row, ri){
+
+  tbody.innerHTML = displayData.map(function(row, ri){
     var bg = ri%2===0 ? '#fff' : '#fff8f8';
-    var cells = '<td contenteditable="true" style="'+tdBase+'background:'+bg+';font-weight:600;min-width:200px;position:sticky;left:0;z-index:1;" onblur="tphMainUpdateName('+ri+',this.innerText)">'+row.name+'</td>';
+    var origIdx = data.indexOf(row);
+    var cells = '<td contenteditable="true" style="'+tdBase+'background:'+bg+';font-weight:600;min-width:200px;position:sticky;left:0;z-index:1;" onblur="tphMainUpdateName('+origIdx+',this.innerText)">'+row.name+'</td>';
     for(var m=0; m<12; m++){
-      var v = row.months[m]||0; if(v>0) totals[m]+=v;
-      cells += '<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;'+(v>0?'color:#1a1a1a;':'color:#ddd;')+'" onblur="tphMainUpdateCell('+ri+','+m+',this.innerText)">'+(v>0?v.toLocaleString('vi-VN'):'–')+'</td>';
+      var v = row.months[m]||0;
+      cells += '<td contenteditable="true" style="'+tdBase+'background:'+bg+';text-align:center;'+(v>0?'color:#1a1a1a;':'color:#ddd;')+'" onblur="tphMainUpdateCell('+origIdx+','+m+',this.innerText)">'+(v>0?v.toLocaleString('vi-VN'):'–')+'</td>';
     }
-    cells += '<td style="'+tdBase+'background:'+bg+';text-align:center;color:#888;font-size:11px;">'+( row.unit||'Ly')+'</td>';
-    cells += '<td style="'+tdBase+'background:'+bg+';text-align:center;"><button onclick="tphMainDelete('+ri+')" style="background:#fee2e2;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:#b91c1c;font-size:13px;line-height:1;">×</button></td>';
+    cells += '<td style="'+tdBase+'background:'+bg+';text-align:center;color:#888;font-size:11px;">'+(row.unit||'Ly')+'</td>';
+    cells += '<td style="'+tdBase+'background:'+bg+';text-align:center;"><button onclick="tphMainDelete('+origIdx+')" style="background:#fee2e2;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:#b91c1c;font-size:13px;line-height:1;">×</button></td>';
     return '<tr style="background:'+bg+';">'+cells+'</tr>';
   }).join('');
 
-  var fcBase = 'padding:8px;font-size:12px;font-weight:700;background:#fee2e2;text-align:center;';
-  var fc = '<td style="'+fcBase+'text-align:left;color:#b91c1c;position:sticky;left:0;background:#fee2e2;">TỔNG</td>';
-  for(var m=0; m<12; m++){
-    fc += '<td style="'+fcBase+'color:'+( totals[m]>0?'#b91c1c':'#ddd')+';">'+(totals[m]>0?totals[m].toLocaleString('vi-VN'):'–')+'</td>';
-  }
-  fc += '<td style="'+fcBase+'"></td><td style="'+fcBase+'"></td>';
-  if(tfoot) tfoot.innerHTML = '<tr>'+fc+'</tr>';
+  wmRenderCompare('tph', data, tfoot, '#fee2e2', '#dc2626', tdBase);
 }
+
 
 function tphMainUpdateName(ri, v){
   var d = tphMainLoad(); if(d[ri]) d[ri].name = v.trim(); tphMainSave(d);
