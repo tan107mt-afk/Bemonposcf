@@ -1514,13 +1514,14 @@ footer strong{color:var(--green-light);}
         <div class="panel-title">Thành Phẩm Hủy</div>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-        <div style="display:flex;align-items:center;gap:6px;background:#fee2e2;border:1.5px solid #fecaca;border-radius:20px;padding:4px 10px;">
+        <div style="display:flex;align-items:center;gap:8px;background:#fee2e2;border:1.5px solid #fecaca;border-radius:20px;padding:4px 12px;flex:1;max-width:600px;overflow:hidden;">
           <span style="font-size:11px;font-weight:700;color:#b91c1c;white-space:nowrap;">📊</span>
           <select id="tph-cmp-sel" onchange="wmUpdateCompare('tph')"
-            style="border:none;background:transparent;font-size:11px;font-family:'Open Sans',sans-serif;color:#b91c1c;outline:none;cursor:pointer;max-width:160px;font-weight:600;">
+            style="border:none;background:transparent;font-size:11px;font-family:'Open Sans',sans-serif;color:#b91c1c;outline:none;cursor:pointer;max-width:160px;font-weight:600;flex-shrink:0;">
             <option value="">-- Chọn thành phẩm --</option>
           </select>
-          <div id="tph-cmp-bars" style="display:flex;align-items:flex-end;gap:3px;height:36px;min-width:200px;overflow:hidden;"></div>
+          <div id="tph-cmp-bars" style="flex:1;min-width:80px;height:36px;display:flex;align-items:flex-end;gap:2px;overflow:hidden;"></div>
+        </div>
         </div>
         <button onclick="tphAddRow()" style="padding:7px 14px;background:#dc2626;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">+ Thêm món</button>
         <button onclick="tphSave()" style="padding:7px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;">💾 Lưu</button>
