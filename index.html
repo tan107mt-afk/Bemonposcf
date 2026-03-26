@@ -5260,14 +5260,7 @@ async function loginWithGoogle(){
   try{
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    // Dùng redirect trên mobile (popup bị chặn), popup trên desktop
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    if(isMobile){
-      // Lưu flag để xử lý sau khi redirect về
-      sessionStorage.setItem('zentea-google-redirect', '1');
-      await fbAuth.signInWithRedirect(provider);
-      return; // Trang sẽ redirect, xử lý ở onAuthStateChanged
-    }
+    // Popup qua zentea-qlch.firebaseapp.com (đã authorized sẵn) - hoạt động cả mobile lẫn desktop
     const result = await fbAuth.signInWithPopup(provider);
     const gUser  = result.user;
 
@@ -5313,38 +5306,6 @@ async function loginWithGoogle(){
 
 // Lắng nghe Firebase auth state + xử lý redirect result
 if(fbAuth){
-  // Xử lý kết quả redirect (mobile Google Sign-In)
-  fbAuth.getRedirectResult().then(async (result) => {
-    if(result && result.user){
-      const gUser = result.user;
-      sessionStorage.removeItem('zentea-google-redirect');
-      const accounts = await apiGetAccounts();
-      let found = accounts.find(a => a.googleUid === gUser.uid || a.email === gUser.email);
-      if(!found){
-        found = {
-          id: 'g-' + gUser.uid, googleUid: gUser.uid, email: gUser.email,
-          username: gUser.email.split('@')[0].replace(/[^a-z0-9_.]/gi,'').toLowerCase(),
-          fullname: gUser.displayName || gUser.email,
-          password: '', role: 'staff', branch: 'global',
-          createdAt: new Date().toISOString()
-        };
-        accounts.push(found);
-        await apiSaveAccounts(accounts);
-      }
-      const account = {
-        user: found.username, fullname: found.fullname,
-        branch: found.branch || 'global', role: found.role || 'staff',
-        id: found.id, email: found.email, avatar: gUser.photoURL || ''
-      };
-      selectedBranch = account.branch;
-      loginSuccess(account, false);
-    }
-  }).catch(err => {
-    if(err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request'){
-      console.warn('Redirect result error:', err.code);
-    }
-  });
-
   fbAuth.onAuthStateChanged(async (gUser) => {
     if(gUser && !isLoggedIn){
       const accounts = await apiGetAccounts();
