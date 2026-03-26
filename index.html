@@ -831,6 +831,10 @@ button[style*="border-radius:50%"]:not(.zeye):not(.eye):not(.modal-close){
 
   <!-- Account badge area (right) - hidden, user pill shown on left instead -->
   <div class="nav-branch" id="nav-branch-badge" style="display:none!important;"></div>
+  <!-- Approve button (superadmin only, shown after login) -->
+  <button id="approve-btn" onclick="openApprovalPanel()"
+    style="display:none;padding:7px 14px;background:rgba(255,200,0,.25);border:1.5px solid rgba(255,200,0,.5);border-radius:20px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;margin-right:8px;align-items:center;gap:6px;"
+    title="Duyệt tài khoản mới">🔑 <span id="pending-badge"></span>Duyệt</button>
   <!-- Login hint (shown before login) -->
   <div id="topnav-login-hint">🔒 Vui lòng đăng nhập</div>
 </nav>
