@@ -25,6 +25,8 @@ const FIREBASE_CONFIG = {
   appId:             "1:1085565734491:web:904b1ec407284c9a39b97e"
 };
 const FB_CONFIGURED = true; // Real Firebase config
+// ── SUPERADMIN: Tài khoản Google của chủ hệ thống ──
+const SUPERADMIN_EMAIL = 'tan107.mt@gmail.com'; // Thay bằng email Google của bạn
 let fbApp = null, fbAuth = null, fbDb = null;
 if (FB_CONFIGURED) {
   try {
@@ -632,11 +634,108 @@ button[style*="border-radius:50%"]:not(.zeye):not(.eye):not(.modal-close){
 .card-v{background:#1e1b4b;border:1.5px solid #4c1d95;border-radius:12px;padding:12px;}
 .lbl-g8{font-size:10px;font-weight:800;color:var(--green);margin-bottom:6px;}
 .lbl-v8{font-size:10px;font-weight:800;color:#a5b4fc;margin-bottom:6px;}
+
+/* ── Pending Approval Screen ── */
+#pending-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#1a1a1a 0%,#2d7a2d 100%);
+  display:none;align-items:center;justify-content:center;
+}
+.pending-card{
+  background:#fff;border-radius:24px;padding:40px 36px;
+  max-width:420px;width:90%;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+.pending-icon{font-size:56px;margin-bottom:16px;}
+.pending-title{font-family:'Lato',sans-serif;font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:8px;}
+.pending-sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:24px;}
+.pending-email{
+  background:#f0fdf4;border:1.5px solid #c6f6d5;border-radius:10px;
+  padding:10px 16px;font-size:13px;font-weight:600;color:#2d7a2d;
+  margin-bottom:24px;word-break:break-all;
+}
+.pending-logout{
+  padding:10px 28px;background:#e5e7eb;color:#374151;border:none;
+  border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;
+  font-family:'Open Sans',sans-serif;
+}
+.pending-logout:hover{background:#d1d5db;}
+
+/* ── Approval Panel (for superadmin) ── */
+#approval-panel{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;
+}
+.approval-card{
+  background:#fff;border-radius:20px;width:100%;max-width:560px;
+  max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.approval-header{
+  background:linear-gradient(135deg,var(--green),var(--green-light));
+  padding:20px 24px;border-radius:20px 20px 0 0;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:1;
+}
+.approval-header h3{color:#fff;font-family:'Lato',sans-serif;font-size:17px;font-weight:700;margin:0;}
+.approval-body{padding:20px 24px;}
+.req-card{
+  background:#f8fafc;border:1.5px solid #e5e7eb;border-radius:12px;
+  padding:14px 16px;margin-bottom:12px;
+}
+.req-card.approved{border-color:#c6f6d5;background:#f0fdf4;}
+.req-email{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.req-name{font-size:12px;color:#666;margin-bottom:10px;}
+.req-time{font-size:11px;color:#9ca3af;}
+.req-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.req-role-sel{
+  flex:1;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;
+  font-size:12px;font-family:'Open Sans',sans-serif;background:#fff;outline:none;
+}
+.btn-approve{
+  padding:7px 16px;background:var(--green);color:#fff;border:none;
+  border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Open Sans',sans-serif;
+}
+.btn-approve:hover{background:#3d9630;}
+.btn-reject{
+  padding:7px 14px;background:#fee2e2;color:#991b1b;border:none;
+  border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Open Sans',sans-serif;
+}
+.btn-reject:hover{background:#fca5a5;}
+.no-pending{text-align:center;color:#9ca3af;font-size:13px;padding:20px 0;}
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
+
+<!-- Pending Approval Screen -->
+<div id="pending-screen">
+  <div class="pending-card">
+    <div class="pending-icon">⏳</div>
+    <div class="pending-title">Chờ phê duyệt</div>
+    <div class="pending-sub">Tài khoản của bạn đang chờ quản trị viên phê duyệt. Vui lòng liên hệ admin để được cấp quyền truy cập.</div>
+    <div class="pending-email" id="pending-email-display"></div>
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:20px;">Bạn sẽ được thông báo khi được duyệt.</div>
+    <button class="pending-logout" onclick="logoutPending()">🚪 Đăng xuất</button>
+  </div>
+</div>
+
+<!-- Approval Panel -->
+<div id="approval-panel">
+  <div class="approval-card">
+    <div class="approval-header">
+      <h3>🔑 Quản lý yêu cầu truy cập</h3>
+      <button onclick="$('approval-panel').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;">×</button>
+    </div>
+    <div class="approval-body" id="approval-list">
+      <div class="no-pending">Đang tải...</div>
+    </div>
+  </div>
+</div>
+
 <nav id="topnav">
   <!-- Logo -->
   <a class="nav-logo" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
@@ -5262,38 +5361,8 @@ async function loginWithGoogle(){
     provider.setCustomParameters({ prompt: 'select_account' });
     // Popup qua zentea-qlch.firebaseapp.com (đã authorized sẵn) - hoạt động cả mobile lẫn desktop
     const result = await fbAuth.signInWithPopup(provider);
-    const gUser  = result.user;
-
-    // Tạo/cập nhật tài khoản trong Firestore
-    const accounts = await apiGetAccounts();
-    let found = accounts.find(a => a.googleUid === gUser.uid || a.email === gUser.email);
-    if(!found){
-      found = {
-        id:        'g-' + gUser.uid,
-        googleUid: gUser.uid,
-        email:     gUser.email,
-        username:  gUser.email.split('@')[0].replace(/[^a-z0-9_.]/gi,'').toLowerCase(),
-        fullname:  gUser.displayName || gUser.email,
-        password:  '',
-        role:      'staff',
-        branch:    'global',
-        createdAt: new Date().toISOString()
-      };
-      accounts.push(found);
-      await apiSaveAccounts(accounts);
-    }
-
-    const account = {
-      user:     found.username,
-      fullname: found.fullname,
-      branch:   found.branch  || 'global',
-      role:     found.role    || 'staff',
-      id:       found.id,
-      email:    found.email,
-      avatar:   gUser.photoURL || ''
-    };
-    selectedBranch = account.branch;
-    loginSuccess(account, false);
+    const gUser = result.user;
+    await handleGoogleUser(gUser, false);
 
   }catch(err){
     if(err.code !== 'auth/popup-closed-by-user'){
@@ -5308,21 +5377,7 @@ async function loginWithGoogle(){
 if(fbAuth){
   fbAuth.onAuthStateChanged(async (gUser) => {
     if(gUser && !isLoggedIn){
-      const accounts = await apiGetAccounts();
-      const found = accounts.find(a => a.googleUid === gUser.uid || a.email === gUser.email);
-      if(found){
-        const account = {
-          user:     found.username,
-          fullname: found.fullname,
-          branch:   found.branch  || 'global',
-          role:     found.role    || 'staff',
-          id:       found.id,
-          email:    found.email,
-          avatar:   gUser.photoURL || ''
-        };
-        selectedBranch = account.branch;
-        loginSuccess(account, true);
-      }
+      await handleGoogleUser(gUser, true);
     }
   });
 }
@@ -9673,6 +9728,199 @@ function saveInlineEdits(section){
   document.head.appendChild(s);
 })();
 
+
+
+
+// ══════════════════════════════════════════════════════════════
+// GOOGLE ACCOUNT AUTHORIZATION SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+async function handleGoogleUser(gUser, fromSession=false){
+  const isSuperAdmin = gUser.email === SUPERADMIN_EMAIL;
+  const accounts = await apiGetAccounts();
+  let found = accounts.find(a => a.googleUid === gUser.uid || a.email === gUser.email);
+
+  if(isSuperAdmin){
+    // Superadmin: tự động tạo/tìm tài khoản và đăng nhập
+    if(!found){
+      found = {
+        id: 'g-' + gUser.uid, googleUid: gUser.uid, email: gUser.email,
+        username: 'superadmin', fullname: gUser.displayName || 'Super Admin',
+        password: '', role: 'superadmin', branch: 'global',
+        status: 'approved', createdAt: new Date().toISOString()
+      };
+      accounts.push(found);
+      await apiSaveAccounts(accounts);
+    } else if(found.role !== 'superadmin'){
+      found.role = 'superadmin'; found.status = 'approved';
+      await apiSaveAccounts(accounts);
+    }
+    loginSuccess({user:found.username,fullname:found.fullname,branch:'global',
+      role:'superadmin',id:found.id,email:found.email,avatar:gUser.photoURL||''}, fromSession);
+    return;
+  }
+
+  // Account khác: kiểm tra status
+  if(found){
+    if(found.status === 'approved'){
+      loginSuccess({user:found.username,fullname:found.fullname,
+        branch:found.branch||'global',role:found.role||'staff',
+        id:found.id,email:found.email,avatar:gUser.photoURL||''}, fromSession);
+    } else if(found.status === 'rejected'){
+      showAuthError('❌ Tài khoản của bạn đã bị từ chối. Liên hệ admin.');
+      if(fbAuth) fbAuth.signOut();
+    } else {
+      // pending
+      showPendingScreen(gUser.email);
+    }
+    return;
+  }
+
+  // Lần đầu đăng nhập: tạo pending request
+  const newReq = {
+    id: 'g-' + gUser.uid, googleUid: gUser.uid, email: gUser.email,
+    username: gUser.email.split('@')[0].replace(/[^a-z0-9_.]/gi,'_').toLowerCase(),
+    fullname: gUser.displayName || gUser.email,
+    password: '', role: 'staff', branch: 'global',
+    status: 'pending', requestedAt: new Date().toISOString(),
+    avatar: gUser.photoURL || ''
+  };
+  accounts.push(newReq);
+  await apiSaveAccounts(accounts);
+
+  // Lưu vào pending node riêng để superadmin dễ thấy
+  if(fbDb){
+    try { await fbDb.ref('pendingNotify/' + gUser.uid).set({
+      email: gUser.email, name: gUser.displayName, requestedAt: Date.now()
+    }); } catch(e){}
+  }
+  showPendingScreen(gUser.email);
+}
+
+function showPendingScreen(email){
+  const el = $('pending-email-display');
+  if(el) el.textContent = email;
+  const s = $('pending-screen');
+  if(s) s.style.display = 'flex';
+  hide('home');
+}
+
+function logoutPending(){
+  if(fbAuth) fbAuth.signOut();
+  const s = $('pending-screen');
+  if(s) s.style.display = 'none';
+  show('home');
+}
+
+// ── Approval Panel (Superadmin only) ──
+async function openApprovalPanel(){
+  show('approval-panel');
+  await refreshApprovalList();
+}
+
+async function refreshApprovalList(){
+  const listEl = $('approval-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<div class="no-pending">Đang tải...</div>';
+
+  const accounts = await apiGetAccounts();
+  const pending = accounts.filter(a => a.status === 'pending');
+  const approved = accounts.filter(a => a.status === 'approved' && a.role !== 'superadmin');
+
+  let html = '';
+
+  if(pending.length > 0){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:1px;margin-bottom:10px;">⏳ CHỜ DUYỆT (' + pending.length + ')</div>';
+    pending.forEach(req => {
+      html += `<div class="req-card" data-id="${req.id}">
+        <div class="req-email">📧 ${req.email}</div>
+        <div class="req-name">👤 ${req.fullname}</div>
+        <div class="req-time">Yêu cầu: ${req.requestedAt ? new Date(req.requestedAt).toLocaleString('vi-VN') : ''}</div>
+        <div class="req-actions">
+          <select class="req-role-sel" id="role-${req.id}">
+            <option value="staff">Nhân viên</option>
+            <option value="admin">Quản lý</option>
+            <option value="viewer">Xem báo cáo</option>
+          </select>
+          <button class="btn-approve" onclick="approveAccount('${req.id}')">✅ Duyệt</button>
+          <button class="btn-reject" onclick="rejectAccount('${req.id}')">❌ Từ chối</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  if(approved.length > 0){
+    html += '<div style="font-size:11px;font-weight:700;color:#6b7280;letter-spacing:1px;margin:16px 0 10px;">✅ ĐÃ DUYỆT (' + approved.length + ')</div>';
+    approved.forEach(acc => {
+      html += `<div class="req-card approved">
+        <div class="req-email">📧 ${acc.email}</div>
+        <div class="req-name">👤 ${acc.fullname} · <span style="color:var(--green);font-weight:600;">${acc.role}</span></div>
+        <div class="req-actions">
+          <button class="btn-reject" onclick="revokeAccount('${acc.id}')">🚫 Thu hồi</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  if(!html) html = '<div class="no-pending">✨ Không có yêu cầu nào</div>';
+  listEl.innerHTML = html;
+
+  // Update badge
+  const badge = $('pending-badge');
+  if(badge) badge.textContent = pending.length > 0 ? '(' + pending.length + ')' : '';
+}
+
+async function approveAccount(id){
+  const accounts = await apiGetAccounts();
+  const acc = accounts.find(a => a.id === id);
+  if(!acc) return;
+  const roleEl = document.getElementById('role-' + id);
+  acc.status = 'approved';
+  acc.role = roleEl ? roleEl.value : 'staff';
+  acc.approvedAt = new Date().toISOString();
+  await apiSaveAccounts(accounts);
+  // Xóa pending notify
+  if(fbDb) try { await fbDb.ref('pendingNotify/' + acc.googleUid).remove(); } catch(e){}
+  await refreshApprovalList();
+}
+
+async function rejectAccount(id){
+  const accounts = await apiGetAccounts();
+  const acc = accounts.find(a => a.id === id);
+  if(!acc) return;
+  acc.status = 'rejected';
+  await apiSaveAccounts(accounts);
+  await refreshApprovalList();
+}
+
+async function revokeAccount(id){
+  if(!confirm('Thu hồi quyền truy cập của tài khoản này?')) return;
+  const accounts = await apiGetAccounts();
+  const acc = accounts.find(a => a.id === id);
+  if(!acc) return;
+  acc.status = 'pending';
+  delete acc.approvedAt;
+  await apiSaveAccounts(accounts);
+  await refreshApprovalList();
+}
+
+// Check pending badge khi superadmin login
+async function checkPendingBadge(){
+  if(currentUser?.role !== 'superadmin') return;
+  const btn = $('approve-btn');
+  if(btn) btn.style.display = 'inline-flex';
+  const accounts = await apiGetAccounts();
+  const pendingCount = accounts.filter(a => a.status === 'pending').length;
+  const badge = $('pending-badge');
+  if(badge) badge.textContent = pendingCount > 0 ? '(' + pendingCount + ')' : '';
+  // Lắng nghe realtime pending mới
+  if(fbDb){
+    fbDb.ref('pendingNotify').on('value', snap => {
+      const count = snap.numChildren();
+      if(badge) badge.textContent = count > 0 ? '(' + count + ')' : '';
+    });
+  }
+}
 
 </script>
 </body>
