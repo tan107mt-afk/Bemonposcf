@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- Thư viện xem tài liệu trực tuyến -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- ══ FIREBASE ══ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -817,6 +820,88 @@ button[style*="border-radius:50%"]:not(.zeye):not(.eye):not(.modal-close){
 .btn-change-role:hover{background:#e5e7eb;}
 .member-joined{font-size:10px;color:#9ca3af;margin-top:2px;}
 
+
+/* ── Document Viewer Modal ── */
+#doc-viewer-modal{
+  position:fixed;inset:0;z-index:99999;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  display:none;flex-direction:column;
+}
+.dv-header{
+  background:#1a1a1a;padding:12px 20px;
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.dv-title{color:#fff;font-size:14px;font-weight:700;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dv-dl-btn{
+  padding:7px 16px;background:var(--green);color:#fff;border:none;
+  border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Open Sans',sans-serif;white-space:nowrap;
+}
+.dv-close-btn{
+  width:34px;height:34px;background:rgba(255,255,255,.15);border:none;
+  border-radius:50%;color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.dv-close-btn:hover{background:rgba(220,50,50,.5);}
+.dv-body{
+  flex:1;overflow:auto;background:#f5f5f5;
+  display:flex;flex-direction:column;align-items:center;
+}
+.dv-loading{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex:1;color:#666;font-size:15px;gap:12px;
+}
+.dv-spinner{
+  width:40px;height:40px;border:4px solid #e5e7eb;
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Word/HTML content styling */
+.dv-docx-content{
+  max-width:800px;width:100%;background:#fff;
+  margin:24px auto;padding:40px 48px;
+  box-shadow:0 2px 20px rgba(0,0,0,.15);
+  border-radius:8px;font-size:14px;line-height:1.8;color:#222;
+}
+.dv-docx-content h1,.dv-docx-content h2,.dv-docx-content h3{
+  color:#1a1a1a;margin:1em 0 .5em;
+}
+.dv-docx-content table{width:100%;border-collapse:collapse;margin:1em 0;}
+.dv-docx-content td,.dv-docx-content th{
+  border:1px solid #ddd;padding:8px 12px;font-size:13px;
+}
+.dv-docx-content th{background:#f0fdf4;font-weight:700;}
+/* Excel table styling */
+.dv-xlsx-wrap{width:100%;padding:16px;overflow:auto;}
+.dv-xlsx-table{
+  border-collapse:collapse;background:#fff;
+  box-shadow:0 2px 12px rgba(0,0,0,.1);border-radius:8px;overflow:hidden;
+  min-width:600px;font-size:13px;
+}
+.dv-xlsx-table th{
+  background:var(--green);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;white-space:nowrap;
+}
+.dv-xlsx-table td{
+  padding:8px 14px;border-bottom:1px solid #e5e7eb;
+  white-space:nowrap;
+}
+.dv-xlsx-table tr:hover td{background:#f0fdf4;}
+.dv-sheet-tabs{
+  display:flex;gap:4px;padding:12px 16px 0;background:#e5e7eb;flex-wrap:wrap;
+}
+.dv-sheet-tab{
+  padding:6px 14px;background:#fff;border:none;border-radius:6px 6px 0 0;
+  font-size:12px;font-weight:600;cursor:pointer;color:#374151;
+  font-family:'Open Sans',sans-serif;
+}
+.dv-sheet-tab.active{background:var(--green);color:#fff;}
+@media(max-width:640px){
+  .dv-docx-content{padding:20px 16px;margin:12px;}
+  .dv-header{padding:10px 14px;}
+}
 /* ── Lưu trữ tài liệu ── */
 .doc-upload-zone{
   border:2.5px dashed var(--border);border-radius:16px;
@@ -10472,7 +10557,8 @@ function docRender() {
       <div class="doc-name">${doc.name}</div>
       <div class="doc-meta">${size} · ${date}</div>
       <div class="doc-actions">
-        <button class="btn-doc-dl" onclick="docDownload('${doc.id}')">⬇️ Tải về</button>
+        <button class="btn-doc-dl" onclick="openDocViewer('${doc.id}')" style="background:var(--green-light);">👁️ Xem</button>
+        <button class="btn-doc-dl" onclick="docDownload('${doc.id}')">⬇️</button>
         <button class="btn-doc-del" onclick="docDelete('${doc.id}')">🗑️</button>
       </div>
     </div>`;
@@ -10542,5 +10628,22 @@ async function savePermEdit(id){
 }
 
 </script>
+
+<!-- Document Viewer Modal -->
+<div id="doc-viewer-modal">
+  <div class="dv-header">
+    <span id="dv-file-icon" style="font-size:20px;">📄</span>
+    <span class="dv-title" id="dv-file-name">Tài liệu</span>
+    <button class="dv-dl-btn" id="dv-dl-btn" onclick="docViewerDownload()">⬇️ Tải về</button>
+    <button class="dv-close-btn" onclick="closeDocViewer()">×</button>
+  </div>
+  <div class="dv-body" id="dv-body">
+    <div class="dv-loading" id="dv-loading">
+      <div class="dv-spinner"></div>
+      <span>Đang mở tài liệu...</span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
