@@ -5781,10 +5781,16 @@ async function loginWithGoogle(){
   try{
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    // Popup qua zentea-qlch.firebaseapp.com (đã authorized sẵn) - hoạt động cả mobile lẫn desktop
+    // Popup qua zentea-qlch.firebaseapp.com (đã authorized sẵn)
     const result = await fbAuth.signInWithPopup(provider);
     const gUser = result.user;
-    await handleGoogleUser(gUser, false);
+    // Set lock NGAY để onAuthStateChanged không chạy đồng thời
+    _googleAuthLock = true;
+    try {
+      await _handleGoogleUserCore(gUser, false);
+    } finally {
+      _googleAuthLock = false;
+    }
 
   }catch(err){
     if(err.code !== 'auth/popup-closed-by-user'){
@@ -5798,8 +5804,13 @@ async function loginWithGoogle(){
 // Lắng nghe Firebase auth state + xử lý redirect result
 if(fbAuth){
   fbAuth.onAuthStateChanged(async (gUser) => {
-    if(gUser && !isLoggedIn){
-      await handleGoogleUser(gUser, true);
+    // Chỉ xử lý khi: có user + chưa login + không đang trong quá trình xử lý
+    if(gUser && !isLoggedIn && !_googleAuthLock){
+      // Đợi một chút để loginWithGoogle (nếu đang chạy) có thể set lock trước
+      await new Promise(r => setTimeout(r, 200));
+      if(!isLoggedIn && !_googleAuthLock){
+        await handleGoogleUser(gUser, true);
+      }
     }
   });
 }
@@ -10185,7 +10196,23 @@ function saveInlineEdits(section){
 // GOOGLE ACCOUNT AUTHORIZATION SYSTEM
 // ══════════════════════════════════════════════════════════════
 
+// Lock để tránh gọi handleGoogleUser đồng thời
+let _googleAuthLock = false;
+
 async function handleGoogleUser(gUser, fromSession=false){
+  // Nếu đã đăng nhập rồi → bỏ qua
+  if(isLoggedIn) return;
+  // Lock: tránh 2 lần gọi đồng thời (từ loginWithGoogle + onAuthStateChanged)
+  if(_googleAuthLock) return;
+  _googleAuthLock = true;
+  try {
+    await _handleGoogleUserCore(gUser, fromSession);
+  } finally {
+    _googleAuthLock = false;
+  }
+}
+
+async function _handleGoogleUserCore(gUser, fromSession=false){
   const isSuperAdmin = gUser.email === SUPERADMIN_EMAIL;
   const accounts = await apiGetAccounts();
   let found = accounts.find(a => a.googleUid === gUser.uid || a.email === gUser.email);
@@ -10251,7 +10278,7 @@ async function handleGoogleUser(gUser, fromSession=false){
     }); } catch(e){}
   }
   showPendingScreen(gUser.email);
-}
+}  // end _handleGoogleUserCore
 
 function showPendingScreen(email){
   const el = $('pending-email-display');
