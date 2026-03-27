@@ -4745,20 +4745,48 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ẩn home ngay - chỉ hiện sau khi biết có/không có session
   hide('home');
 
-  // Check session trước khi hiện bất cứ thứ gì
+  // Khởi động: đợi cả session lẫn Firebase auth state
   (async () => {
+    // Bước 1: Check localStorage session trước
     await checkSession();
-    // Nếu không có session → hiện màn hình đăng nhập
+    
+    if(isLoggedIn){
+      // Đã đăng nhập từ localStorage → ẩn loader
+      const loader = document.getElementById('app-loading');
+      if(loader){ loader.style.opacity='0'; setTimeout(()=>loader.style.display='none',300); }
+      return;
+    }
+
+    // Bước 2: Nếu không có localStorage, đợi Firebase auth state
+    // (Firebase tự động khôi phục Google session trên browser mới)
+    await new Promise(resolve => {
+      const timeout = setTimeout(() => {
+        // Sau 3s không có Firebase response → hiện login
+        resolve();
+      }, 3000);
+
+      const unsub = fbAuth.onAuthStateChanged(async (gUser) => {
+        unsub(); // Unsubscribe ngay
+        clearTimeout(timeout);
+        
+        if(gUser && !isLoggedIn){
+          // Firebase có session → xử lý tự động
+          await handleGoogleUser(gUser, true);
+        }
+        resolve();
+      });
+    });
+
+    // Bước 3: Nếu vẫn chưa login → hiện màn hình đăng nhập
     if(!isLoggedIn){
       show('home','flex');
       window.scrollTo({top:0,behavior:'instant'});
     }
+
     // Ẩn loading splash
     const loader = document.getElementById('app-loading');
-    if(loader){
-      loader.style.opacity = '0';
-      setTimeout(() => loader.style.display = 'none', 300);
-    }
+    if(loader){ loader.style.opacity='0'; setTimeout(()=>loader.style.display='none',300); }
+    window._appReady = true; // Cho phép onAuthStateChanged xử lý tiếp
   })();
 });
 
@@ -5803,14 +5831,11 @@ async function loginWithGoogle(){
 
 // Lắng nghe Firebase auth state + xử lý redirect result
 if(fbAuth){
+  // onAuthStateChanged được handle trong DOMContentLoaded để tránh conflict
+  // Chỉ giữ lại để xử lý sau khi popup login thành công
   fbAuth.onAuthStateChanged(async (gUser) => {
-    // Chỉ xử lý khi: có user + chưa login + không đang trong quá trình xử lý
-    if(gUser && !isLoggedIn && !_googleAuthLock){
-      // Đợi một chút để loginWithGoogle (nếu đang chạy) có thể set lock trước
-      await new Promise(r => setTimeout(r, 200));
-      if(!isLoggedIn && !_googleAuthLock){
-        await handleGoogleUser(gUser, true);
-      }
+    if(gUser && !isLoggedIn && !_googleAuthLock && window._appReady){
+      await handleGoogleUser(gUser, true);
     }
   });
 }
