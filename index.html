@@ -9973,7 +9973,12 @@ async function handleGoogleUser(gUser, fromSession=false){
       showAuthError('❌ Tài khoản của bạn đã bị từ chối. Liên hệ admin.');
       if(fbAuth) fbAuth.signOut();
     } else {
-      // pending
+      // pending hoặc MISSING status → coi là pending, cập nhật lại
+      if(!found.status){
+        found.status = 'pending';
+        found.requestedAt = found.requestedAt || found.createdAt || new Date().toISOString();
+        await apiSaveAccounts(accounts);
+      }
       showPendingScreen(gUser.email);
     }
     return;
