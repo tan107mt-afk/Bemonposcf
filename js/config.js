@@ -10,6 +10,17 @@ var $=function(id){return document.getElementById(id);};
 function show(id,d){var e=$(id);if(e)e.style.display=d||'block';}
 function hide(id){var e=$(id);if(e)e.style.display='none';}
 
+// ── Essential Global State Variables ────────────────────────────
+// Khai báo trước tất cả các file khác để đảm bảo accessibility
+var isLoggedIn = false;
+var currentUser = null;
+var selectedBranch = null;
+var authMode = 'login';
+var _googleAuthLock = false;
+var _docFilter = 'all';
+var _viewerCurrentDoc = null;
+
+
 // Hero bg
 // Hero background → xem js/hero-bg.js
 

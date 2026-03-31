@@ -369,7 +369,7 @@ async function checkPendingBadge(){
 // LƯU TRỮ TÀI LIỆU
 // ══════════════════════════════════════════════════════════════
 const DOC_STORAGE_KEY = 'zentea-docs-v1';
-let _docFilter = 'all';
+// _docFilter declared in config.js
 
 function docGetList() {
   try { return JSON.parse(localStorage.getItem(DOC_STORAGE_KEY) || '[]'); }

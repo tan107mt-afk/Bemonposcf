@@ -767,7 +767,7 @@ async function deleteShift(i){
 }
 
 // BRANCH SELECTOR
-let selectedBranch = null;
+// selectedBranch declared in config.js
 const BRANCH_NAMES = {
   ntmk: 'ZEN Tea Nguyễn Thị Minh Khai',
   vvn:  'ZEN Tea Võ Văn Ngân',
@@ -800,9 +800,9 @@ function togglePwd(){
 }
 
 // ─── MAIN AUTH ───
-let authMode = 'login';
-let isLoggedIn = false;
-let currentUser = null;
+// authMode declared in config.js
+// isLoggedIn declared in config.js
+// currentUser declared in config.js
 
 function toggleAuthMode(){}
 function togglePwdOld(){}
