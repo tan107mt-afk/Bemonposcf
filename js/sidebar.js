@@ -305,6 +305,16 @@ function sidebarChangeBranch(val){
   selectedBranch = val;
   // Cập nhật currentUser.branch để đồng bộ
   if(currentUser) currentUser.branch = val;
+  // Visual feedback: hiện loading trên active section
+  const _activeSection = document.querySelector('.acc-section.page-active');
+  let _loadingEl = null;
+  if(_activeSection){
+    _loadingEl = document.createElement('div');
+    _loadingEl.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,.7);z-index:100;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--green);font-weight:700;border-radius:12px;';
+    _loadingEl.innerHTML = '<div>🔄 Đang tải dữ liệu ' + (STORES[val] || val) + '...</div>';
+    _activeSection.style.position = 'relative';
+    _activeSection.appendChild(_loadingEl);
+  }
   // Lưu vào localStorage
   try {
     const s = JSON.parse(localStorage.getItem('zentea-session')||'{}');
@@ -321,7 +331,14 @@ function sidebarChangeBranch(val){
       }
     }).catch(()=>{});
   }
-  try { loadBranchData(); } catch(e){}
+  try { 
+    loadBranchData().then(() => {
+      // Xóa loading overlay sau khi data load xong
+      if(_loadingEl) _loadingEl.remove();
+    }).catch(() => {
+      if(_loadingEl) _loadingEl.remove();
+    });
+  } catch(e){ if(_loadingEl) _loadingEl.remove(); }
   const storeName = val === 'global' ? 'Tất cả cửa hàng' : (STORES[val] || val);
   showToast('🏪 ' + storeName);
 }

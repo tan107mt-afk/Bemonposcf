@@ -63,8 +63,10 @@ function hideBranchEmptyState(sectionId){
   section?.querySelector('.branch-empty-state')?.remove();
 }
 async function loadBranchData(){
-  // Nếu đang ở branch cụ thể (cn01-cn17), cập nhật banner chi nhánh
+  // Cập nhật banner chi nhánh
   _updateBranchBanner();
+  
+  // Load tất cả data của chi nhánh hiện tại
   await loadContacts();
   await loadEmployees();
   await loadShifts();
@@ -72,6 +74,27 @@ async function loadBranchData(){
   await loadSchedule();
   await loadCleaning();
   await loadCustomRecipes();
+  
+  // Reload checklist data cho branch mới
+  if(typeof clLoadDateDone === 'function') await clLoadDateDone();
+  if(typeof clLoadDateOverrides === 'function') await clLoadDateOverrides();
+  
+  // Re-render section đang hiện (nếu có)
+  const active = document.querySelector('.acc-section.page-active');
+  if(active){
+    const id = active.id;
+    // Trigger re-render theo section
+    try {
+      if(id === 'contacts') renderContactsGrid && renderContactsGrid();
+      else if(id === 'employees') renderEmployees && renderEmployees();
+      else if(id === 'violations') renderViolations && renderViolations();
+      else if(id === 'checklist') {
+        if(typeof clRenderList === 'function') clRenderList();
+        else if(typeof clRenderTimeline === 'function') clRenderTimeline();
+      }
+      else if(id === 'recipes') renderRecipes && renderRecipes();
+    } catch(e){}
+  }
 }
 
 function _updateBranchBanner(){
