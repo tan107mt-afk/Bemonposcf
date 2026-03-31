@@ -257,18 +257,7 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════════════════════════
 // SIDEBAR JS
 // ══════════════════════════════════════════════════════════════
-const STORES = {
-  global:'Tất cả cửa hàng',
-  cn01:'ZEN Tea Võ Thị Sáu',    cn02:'ZEN Tea Food Court',
-  cn03:'ZEN Tea Biên Hùng',     cn04:'ZEN Tea Ngô Quyền',
-  cn05:'ZEN Tea Quảng Trường',  cn06:'ZEN Tea Trảng Dài',
-  cn07:'ZEN Tea Hố Nai',        cn08:'ZEN Tea Trảng Bom 1',
-  cn09:'ZEN Tea Trảng Bom 2',   cn10:'ZEN Tea Gia Kiệm',
-  cn11:'ZEN Tea Long Khánh',    cn12:'ZEN Tea Long Thành',
-  cn13:'ZEN Tea Bình Dương',    cn14:'ZEN Tea Nguyễn Thái Học',
-  cn15:'ZEN Tea Võ Văn Ngân',   cn16:'ZEN Tea Nguyễn Thị Minh Khai',
-  cn17:'ZEN Tea Phan Xích Long'
-};
+// STORES moved to config.js
 
 function sidebarOpen(){
   document.getElementById('sidebar').classList.add('open');

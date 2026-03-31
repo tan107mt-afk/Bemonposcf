@@ -1104,4 +1104,4 @@ function saveInlineEdits(section){
 // ══════════════════════════════════════════════════════════════
 
 // Lock để tránh gọi handleGoogleUser đồng thời
-let _googleAuthLock = false;
+// _googleAuthLock defined in config.js
