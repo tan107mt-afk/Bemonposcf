@@ -16,27 +16,8 @@ const FIREBASE_CONFIG = {
 };
 const FB_CONFIGURED = true; // Real Firebase config
 
-// ── Danh sách mục menu có thể phân quyền ──
-const NAV_SECTIONS = [
-  {id:'checklist',      label:'✅ Checklist',         group:'qlch'},
-  {id:'contacts',       label:'📞 Liên Hệ',           group:'qlch'},
-  {id:'salary',         label:'💰 Lương Bậc',         group:'qlch'},
-  {id:'violations',     label:'⚠️ Vi Phạm',           group:'qlch'},
-  {id:'recipes',        label:'🧋 Công Thức',         group:'qlch'},
-  {id:'employees',      label:'👥 Nhân Viên',         group:'qlch'},
-  {id:'hr-eval',        label:'⭐ Đánh Giá NS',       group:'qlch'},
-  {id:'schedule',       label:'📅 Lịch Làm Việc',    group:'qlch'},
-  {id:'tinhhung',       label:'💬 Tình Huống',        group:'qlch'},
-  {id:'waste-material', label:'♻️ Topping & NL Hủy', group:'qlch'},
-  {id:'report-overview',label:'📈 Tổng Quan',         group:'qlch'},
-  {id:'dt-test',        label:'📝 Tạo Đề Test',       group:'dt'},
-  {id:'luu-tru',        label:'📁 Lưu Trữ TL',        group:'dt'},
-  {id:'dt-vipham',      label:'⚖️ QT Vi Phạm',        group:'dt'},
-  {id:'dt-quytrinh',    label:'📚 QT Đào Tạo',        group:'dt'},
-  {id:'dt-baocao',      label:'📊 Báo Cáo ĐT',        group:'dt'},
-];
-// ── SUPERADMIN: Tài khoản Google của chủ hệ thống ──
-const SUPERADMIN_EMAIL = 'tan107.mt@gmail.com'; // Thay bằng email Google của bạn
+// NAV_SECTIONS defined in config.js
+// SUPERADMIN_EMAIL defined in config.js
 let fbApp = null, fbAuth = null, fbDb = null;
 if (FB_CONFIGURED) {
   try {
