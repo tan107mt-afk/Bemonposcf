@@ -201,7 +201,20 @@ body.logged-in #topbar{
   background:#d1fae5;color:var(--green);
   border-left-color:var(--green);font-weight:700;
 }
-.sb-item-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.sb-item-icon{
+  width:20px;height:20px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.sb-item-icon svg{
+  width:18px;height:18px;
+  stroke:rgba(255,255,255,.75);
+  transition:stroke .2s;
+  flex-shrink:0;
+}
+.sb-item.active .sb-item-icon svg,
+.sb-item:hover .sb-item-icon svg{
+  stroke:#fff;
+}
 
 /* Logout */
 .sb-logout-wrap{padding:12px 14px;border-top:1px solid #e5e7eb;margin-top:auto;}
@@ -1036,4 +1049,10 @@ button[style*="border-radius:50%"]:not(.zeye):not(.eye):not(.modal-close){
   margin:24px;
   background:#f8fafc;border-radius:16px;
   border:2px dashed #e5e7eb;
+}
+
+/* Group title svg icon */
+.sb-group-header .sb-group-icon svg{
+  width:16px;height:16px;
+  stroke:rgba(255,255,255,.6);
 }
