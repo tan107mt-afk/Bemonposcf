@@ -321,13 +321,7 @@ function loginSuccess(account, fromSession){
   if(logo) logo.textContent = account.fullname || BRANCH_NAMES[account.branch] || account.user;
   // Branch badge below stats bar
   // branch-badge removed — branch shown in topnav right pill only
-  // Add logout button to sidebar (only once, if sidebar exists)
-  const nav = document.querySelector('.sb-nav');
-  if(nav && !$('logout-btn')){
-    const div = document.createElement('div');
-    div.innerHTML = '<div class="sb-divider"></div><div class="sb-item" id="logout-btn" onclick="doLogout()" style="color:rgba(255,200,200,.8);"><span class="sb-icon">🚪</span><span class="sb-label">Đổi chi nhánh</span></div>';
-    nav.appendChild(div);
-  }
+  // Logout button is handled by the sb-logout-btn in sidebar HTML
   // Render employees list
   try { renderEmployees(); } catch(e){}
   // Load all branch-specific data
