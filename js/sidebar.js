@@ -349,6 +349,8 @@ function sidebarSetup(account){
   if(!account) return;
   const role = account.role || 'staff';
   const allowed = account.allowedSections;
+  // Debug log
+  console.log('[sidebarSetup] role='+role+' allowedStores='+JSON.stringify(account.allowedStores)+' branch='+account.branch);
 
   // Ẩn/hiện từng sb-item theo quyền
   document.querySelectorAll('.sb-item[data-target]').forEach(btn => {
@@ -379,6 +381,7 @@ function sidebarSetup(account){
 
     // Đảm bảo allowedStores luôn là array (Firebase có thể trả về object)
     let allowedSt = account.allowedStores;
+    console.log('[sidebarSetup] raw allowedSt:', JSON.stringify(allowedSt), 'type:', typeof allowedSt, 'isArray:', Array.isArray(allowedSt));
     if(allowedSt && !Array.isArray(allowedSt)){
       allowedSt = Object.values(allowedSt); // Convert Firebase object → array
     }

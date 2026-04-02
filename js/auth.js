@@ -106,6 +106,7 @@ async function checkSession(){
       } catch(e){}
     }
     await new Promise(r => setTimeout(r, 50));
+    console.log('[checkSession] calling loginSuccess, u.allowedStores='+JSON.stringify(u.allowedStores)+' u.branch='+u.branch);
     loginSuccess(u, true);
   } catch(e){}
 }
