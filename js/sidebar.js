@@ -207,10 +207,6 @@ function setupSidebar(account) {
   // Hiện/ẩn store selector
   const storeWrap = document.getElementById('sb-store-wrap');
   const role = account.role || 'staff';
-  if(storeWrap) {
-    storeWrap.style.display = (role === 'superadmin' || role === 'admin') ? 'block' : 'none';
-  }
-
   // Set selected store
   const sel = document.getElementById('sb-branch-sel');
   if(sel && account.branch) sel.value = account.branch || 'global';
@@ -377,7 +373,7 @@ function sidebarSetup(account){
   // ── Store selector: rebuild hoàn toàn mỗi lần ──
   const storeWrap = document.getElementById('sb-store-wrap');
   if(storeWrap){
-    storeWrap.style.display = '';
+    storeWrap.style.display = 'block';
 
     // Đảm bảo allowedStores luôn là array (Firebase có thể trả về object)
     let allowedSt = account.allowedStores;
