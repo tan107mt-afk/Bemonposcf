@@ -181,8 +181,8 @@ async function refreshApprovalList(){
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div class="member-avatar">${req.avatar ? `<img src="${req.avatar}">` : initials}</div>
           <div>
-            <div class="member-name">👤 ${req.fullname}</div>
-            <div class="member-email">📧 ${req.email}</div>
+            <div class="member-name">👤 ${req.fullname || req.username || '?'}</div>
+            <div class="member-email">${req.email ? '📧 '+req.email : '👤 @'+(req.username||'unknown')} <span style="font-size:9px;color:#9ca3af;">${req.googleUid?'Google':'Password'}</span></div>
             <div class="req-time" style="margin-top:2px;">Yêu cầu: ${req.requestedAt ? new Date(req.requestedAt).toLocaleString('vi-VN') : ''}</div>
           </div>
         </div>
