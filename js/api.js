@@ -1055,6 +1055,7 @@ async function doAuth(){
     const account = {
       user:            found.username,
       fullname:        found.fullname || found.username,
+      email:           found.email    || null,
       branch:          found.branch   || 'global',
       role:            found.role     || 'staff',
       id:              found.id,

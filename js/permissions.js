@@ -290,15 +290,7 @@ async function renderMembersList(){
   membersEl.innerHTML = html;
 }
 
-async function changeRole(id, newRole){
-  const accounts = await apiGetAccounts();
-  const acc = accounts.find(a => a.id === id);
-  if(!acc) return;
-  acc.role = newRole;
-  await apiSaveAccounts(accounts);
-  // Toast nhỏ
-  showToast('✅ Đã đổi quyền thành công');
-}
+// changeRole defined below
 
 async function approveAccount(id){
   const accounts = await apiGetAccounts();
@@ -606,7 +598,7 @@ async function openPermEdit(id) {
       </div>
       <div>
         <div style="font-size:14px;font-weight:800;color:#1a1a1a;">${acc.fullname || acc.username}</div>
-        <div style="font-size:11px;color:#9ca3af;">${acc.email}</div>
+        <div style="font-size:11px;color:#9ca3af;">${acc.email || '👤 @'+(acc.username||'?')}</div>
       </div>
     </div>
 
