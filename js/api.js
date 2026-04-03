@@ -176,20 +176,22 @@ let contactsData = [...DEFAULT_CONTACTS];
 
 async function loadContacts(){
   contactsData = [...DEFAULT_CONTACTS];
-  try {
-    const r = await window.storage.get(branchKey('zentea-contacts'));
-    if(r && r.value) contactsData = JSON.parse(r.value);
-  } catch(e){
-    try {
-      const s = localStorage.getItem(branchKey('zentea-contacts'));
-      if(s) contactsData = JSON.parse(s);
-    } catch(e2){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') {
+    renderContactsGrid();
+    return;
   }
+  try {
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/contacts').once('value');
+    if(snap.val()) contactsData = snap.val();
+  } catch(e){}
   renderContactsGrid();
 }
+
 async function saveContacts(){
-  try { await window.storage.set(branchKey('zentea-contacts'), JSON.stringify(contactsData)); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-contacts'), JSON.stringify(contactsData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/contacts').set(contactsData);
+  } catch(e){ console.error('Lỗi lưu contacts:', e); }
 }
 
 function renderContactsGrid(){
@@ -605,19 +607,18 @@ let editingEmpId = null;
 
 async function loadEmployees(){
   employeesData = [];
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
   try {
-    const r = await window.storage.get(branchKey('zentea-employees'));
-    if(r && r.value) employeesData = JSON.parse(r.value);
-  } catch(e){}
-  try {
-    const s = localStorage.getItem(branchKey('zentea-employees'));
-    if(s && !employeesData.length) employeesData = JSON.parse(s);
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/employees').once('value');
+    if(snap.val()) employeesData = snap.val();
   } catch(e){}
 }
 
 async function saveEmployees(){
-  try { await window.storage.set(branchKey('zentea-employees'), JSON.stringify(employeesData)); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-employees'), JSON.stringify(employeesData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/employees').set(employeesData);
+  } catch(e){}
 }
 
 const STATUS_COLOR = {
@@ -770,20 +771,19 @@ let shiftsData = [...DEFAULT_SHIFTS];
 
 async function loadShifts(){
   shiftsData = [...DEFAULT_SHIFTS];
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
   try {
-    const r = await window.storage.get(branchKey('zentea-shifts'));
-    if(r && r.value) shiftsData = JSON.parse(r.value);
-  } catch(e){}
-  try {
-    const s = localStorage.getItem(branchKey('zentea-shifts'));
-    if(s) shiftsData = JSON.parse(s);
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/shifts').once('value');
+    if(snap.val()) shiftsData = snap.val();
   } catch(e){}
   populateShiftSelect();
 }
 
 async function saveShifts(){
-  try { await window.storage.set(branchKey('zentea-shifts'), JSON.stringify(shiftsData)); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-shifts'), JSON.stringify(shiftsData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/shifts').set(shiftsData);
+  } catch(e){}
 }
 
 function populateShiftSelect(currentVal){
