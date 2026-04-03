@@ -88,7 +88,26 @@ function hideBranchEmptyState(sectionId){
   const section = document.getElementById(sectionId);
   section?.querySelector('.branch-empty-state')?.remove();
 }
+function saveUnsavedInputs() {
+  const inputs = document.querySelectorAll('input, textarea, select');
+  const saved = {};
+  inputs.forEach(el => {
+    if (el.id && el.value) {
+      saved[el.id] = el.value;
+    }
+  });
+  localStorage.setItem('unsaved_inputs', JSON.stringify(saved));
+}
+function restoreUnsavedInputs() {
+  const saved = JSON.parse(localStorage.getItem('unsaved_inputs') || '{}');
+  Object.entries(saved).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+  localStorage.removeItem('unsaved_inputs');
+}
 async function loadBranchData(){
+   saveUnsavedInputs();
   _updateBranchBanner();
   await loadContacts();
   await loadEmployees();
@@ -120,7 +139,7 @@ async function loadBranchData(){
         else if(typeof clRenderTimeline === 'function') clRenderTimeline();
       }
       else if(id === 'recipes') renderRecipes && renderRecipes();
-    } catch(e){}
+    } catch(e){restoreUnsavedInputs();}
   }
 }
 
