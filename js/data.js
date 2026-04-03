@@ -230,6 +230,10 @@ function switchTab(e,id){
   parent.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   $('tab-'+id).classList.add('active');
   e.target.classList.add('active');
+  // Init daily task list khi switch tab
+  if(id === 'daily' && typeof clDailyRender === 'function'){
+    setTimeout(function(){ clDailyRender(); }, 50);
+  }
 }
 
 // ═══ RECIPES DATA ═══
