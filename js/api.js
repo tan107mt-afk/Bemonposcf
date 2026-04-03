@@ -89,10 +89,7 @@ function hideBranchEmptyState(sectionId){
   section?.querySelector('.branch-empty-state')?.remove();
 }
 async function loadBranchData(){
-  // Cập nhật banner chi nhánh
   _updateBranchBanner();
-  
-  // Load tất cả data của chi nhánh hiện tại
   await loadContacts();
   await loadEmployees();
   await loadShifts();
@@ -100,6 +97,10 @@ async function loadBranchData(){
   await loadSchedule();
   await loadCleaning();
   await loadCustomRecipes();
+  
+  // ← THÊM DÒNG NÀY: reload checklist khi đổi cửa hàng
+  try { applyAllContentEdits(); } catch(e){}
+}
   
   // Reload checklist data cho branch mới
   if(typeof clLoadDateDone === 'function') await clLoadDateDone();
