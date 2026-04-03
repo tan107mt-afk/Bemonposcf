@@ -82,19 +82,18 @@ const CAT_LABEL = {tg:'⏰ VI PHẠM THỜI GIAN', tt:'🏢 TRẬT TỰ CỬA H�
 
 async function loadViolations(){
   violationsData = [...DEFAULT_VIOLATIONS];
+  if(!fbDb || !selectedBranch || selectedBranch === 'global'){ renderViolations(); return; }
   try {
-    const r = await window.storage.get(branchKey('zentea-violations'));
-    if(r && r.value) violationsData = JSON.parse(r.value);
-  } catch(e){}
-  try {
-    const s = localStorage.getItem(branchKey('zentea-violations'));
-    if(s) violationsData = JSON.parse(s);
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/violations').once('value');
+    if(snap.val()) violationsData = snap.val();
   } catch(e){}
   renderViolations();
 }
 async function saveViolations(){
-  try { await window.storage.set(branchKey('zentea-violations'), JSON.stringify(violationsData)); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-violations'), JSON.stringify(violationsData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/violations').set(violationsData);
+  } catch(e){}
 }
 
 function renderViolations(){
@@ -842,27 +841,19 @@ const HAS_STORAGE = typeof window !== 'undefined' && typeof window.storage !== '
 
 async function loadCustomRecipes(){
   customRecipes = [];
-  if(HAS_STORAGE){
-    try {
-      const r = await window.storage.get(branchKey('zentea-custom-recipes'));
-      if(r && r.value) customRecipes = JSON.parse(r.value);
-    } catch(e) { customRecipes = []; }
-  } else {
-    try {
-      const saved = localStorage.getItem(branchKey('zentea-custom-recipes'));
-      if(saved) customRecipes = JSON.parse(saved);
-    } catch(e) { customRecipes = []; }
-  }
+  if(!fbDb || !selectedBranch || selectedBranch === 'global'){ renderRecipes(); return; }
+  try {
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/recipes').once('value');
+    if(snap.val()) customRecipes = snap.val();
+  } catch(e){}
   renderRecipes();
 }
 
 async function saveCustomRecipes(){
-  if(HAS_STORAGE){
-    try { await window.storage.set(branchKey('zentea-custom-recipes'), JSON.stringify(customRecipes)); }
-    catch(e){ localStorage.setItem(branchKey('zentea-custom-recipes'), JSON.stringify(customRecipes)); }
-  } else {
-    try { localStorage.setItem(branchKey('zentea-custom-recipes'), JSON.stringify(customRecipes)); } catch(e){}
-  }
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/recipes').set(customRecipes);
+  } catch(e){}
 }
 
 function getAllRecipes(){
