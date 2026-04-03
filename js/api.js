@@ -202,25 +202,21 @@ let contactsData = [...DEFAULT_CONTACTS];
 
 async function loadContacts(){
   contactsData = [...DEFAULT_CONTACTS];
-  try {
-    const data = await branchDbGet('contacts');
-    if(data) contactsData = data;
-    else {
-      // Fallback localStorage
-      const s = localStorage.getItem(branchKey('zentea-contacts'));
-      if(s) contactsData = JSON.parse(s);
-    }
-  } catch(e){
-    try {
-      const s = localStorage.getItem(branchKey('zentea-contacts'));
-      if(s) contactsData = JSON.parse(s);
-    } catch(e2){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') {
+    renderContactsGrid();
+    return;
   }
-  if(typeof renderContactsGrid === 'function') renderContactsGrid();
+  try {
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/contacts').once('value');
+    if(snap.val()) contactsData = snap.val();
+  } catch(e){}
+  renderContactsGrid();
 }
 async function saveContacts(){
-  try { await branchDbSet('contacts', contactsData); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-contacts'), JSON.stringify(contactsData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/contacts').set(contactsData);
+  } catch(e){ console.error('Lỗi lưu contacts:', e); }
 }
 
 function renderContactsGrid(){
