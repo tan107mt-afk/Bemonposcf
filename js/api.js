@@ -632,19 +632,17 @@ let editingEmpId = null;
 
 async function loadEmployees(){
   employeesData = [];
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
   try {
-    const data = await branchDbGet('employees');
-    if(data) employeesData = data;
-    else {
-      const s = localStorage.getItem(branchKey('zentea-employees'));
-      if(s) employeesData = JSON.parse(s);
-    }
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/employees').once('value');
+    if(snap.val()) employeesData = snap.val();
   } catch(e){}
 }
-
 async function saveEmployees(){
-  try { await branchDbSet('employees', employeesData); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-employees'), JSON.stringify(employeesData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/employees').set(employeesData);
+  } catch(e){}
 }
 
 const STATUS_COLOR = {
@@ -797,19 +795,19 @@ let shiftsData = [...DEFAULT_SHIFTS];
 
 async function loadShifts(){
   shiftsData = [...DEFAULT_SHIFTS];
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
   try {
-    const d = await branchDbGet('shifts');
-    if(d) shiftsData = d;
-    else {
-      const s = localStorage.getItem(branchKey('zentea-shifts'));
-      if(s) shiftsData = JSON.parse(s);
-    }
+    const snap = await fbDb.ref('stores/' + selectedBranch + '/shifts').once('value');
+    if(snap.val()) shiftsData = snap.val();
   } catch(e){}
+  populateShiftSelect();
 }
 
 async function saveShifts(){
-  try { await branchDbSet('shifts', shiftsData); } catch(e){}
-  try { localStorage.setItem(branchKey('zentea-shifts'), JSON.stringify(shiftsData)); } catch(e){}
+  if(!fbDb || !selectedBranch || selectedBranch === 'global') return;
+  try {
+    await fbDb.ref('stores/' + selectedBranch + '/shifts').set(shiftsData);
+  } catch(e){}
 }
 
 async function confirmEditShift(i){
