@@ -201,6 +201,22 @@ function closeOv(id){document.getElementById(id).classList.remove('on')}
 //  LOGIN
 // ═══════════════════════════════════════
 function togglePW(){const i=document.getElementById('lp');const b=document.getElementById('peye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁️':'🙈'}
+
+async function _enterApp(){
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('app').style.display='flex';
+  await fbLoadAll();
+  initApp();
+}
+
+// Auto-login nếu đã đăng nhập trước đó
+(async()=>{
+  if(localStorage.getItem('BEMON_SESSION')==='1'){
+    try{ await _enterApp(); }
+    catch(e){ localStorage.removeItem('BEMON_SESSION'); }
+  }
+})();
+
 function doLogin(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value;
@@ -211,10 +227,8 @@ function doLogin(){
   setTimeout(async ()=>{
     if(u===CRED.u&&p===CRED.p){
       btn.textContent='Đang tải dữ liệu... ☁️';
-      await fbLoadAll();
-      document.getElementById('login-wrap').style.display='none';
-      document.getElementById('app').style.display='flex';
-      initApp();
+      localStorage.setItem('BEMON_SESSION','1');
+      await _enterApp();
     }else{
       err.textContent='⚠️ Tên đăng nhập hoặc mật khẩu không đúng';
       err.style.display='block';
@@ -223,6 +237,7 @@ function doLogin(){
   },600);
 }
 function doLogout(){
+  localStorage.removeItem('BEMON_SESSION');
   document.getElementById('app').style.display='none';
   document.getElementById('login-wrap').style.display='flex';
   document.getElementById('lu').value='';
