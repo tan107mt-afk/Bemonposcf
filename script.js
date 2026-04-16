@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════
 const CRED={u:'bemoncoffee0509',p:'Bemon0509.'};
 const CATS={'Robusta':{icon:'☕',color:'#6F4E37'},'Arabica':{icon:'🫘',color:'#3E2723'},'Trà':{icon:'🍵',color:'#2E7D32'},'Khác':{icon:'🍫',color:'#AD1457'},'Topping':{icon:'✨',color:'#F57F17'}};
-const PMS=[{id:'cash',lb:'Tiền mặt',ic:'💵',c:'#16a34a'},{id:'transfer',lb:'Chuyển khoản',ic:'🏦',c:'#3b82f6'},{id:'shopeefood',lb:'ShopeeFood',ic:'🛵',c:'#f97316'},{id:'grabfood',lb:'GrabFood',ic:'🟢',c:'#16a34a'}];
+const PMS=[{id:'cash',lb:'Tiền mặt',ic:'💵',c:'#16a34a'},{id:'transfer',lb:'Chuyển khoản',ic:'🏦',c:'#3b82f6'},{id:'shopeefood',lb:'ShopeeFood',ic:'🛵',c:'#f97316'},{id:'grabfood',lb:'GrabFood',ic:'🟢',c:'#16a34a'},{id:'waiting',lb:'Chờ thanh toán',ic:'⏳',c:'#f59e0b'}];
 
 // ═══════════════════════════════════════
 //  STATE
@@ -177,7 +177,7 @@ const pr=item=>{const s=sz(item);return s==='M'?(item.pM!=null?item.pM:item.pL):
 const cTotal=()=>S.cart.reduce((s,c)=>s+c.price*c.qty,0);
 const cCount=()=>S.cart.reduce((s,c)=>s+c.qty,0);
 const liveOrders=()=>S.orders; // Firebase lưu vĩnh viễn
-const activeOrders=()=>S.orders.filter(o=>!o.cancelled&&!o.refunded&&!o.isRefund); // Chỉ đơn chưa hoàn tiền
+const activeOrders=()=>S.orders.filter(o=>!o.cancelled&&!o.refunded&&!o.isRefund&&o.pm!=='waiting'); // Bỏ đơn huỷ/chờ thanh toán khỏi doanh thu
 
 // ═══════════════════════════════════════
 //  TOAST
@@ -573,7 +573,7 @@ function doCheckout(){
     ts:now.toISOString(),
     isoDate:now.toISOString().slice(0,10),
     invoiceNo:(()=>{
-      const pmCode={'cash':'TM','transfer':'CK','shopeefood':'SF','grabfood':'GB'};
+      const pmCode={'cash':'TM','transfer':'CK','shopeefood':'SF','grabfood':'GB','waiting':'CH'};
       const code=pmCode[S.pm]||'XX';
       const d=now;
       const dd=String(d.getDate()).padStart(2,'0');
@@ -659,10 +659,18 @@ function buildInvSheet(){
       <div style="text-align:center;margin-bottom:18px;font-size:13px;color:var(--muted)">🙏 Cảm ơn quý khách! Hẹn gặp lại ☕</div>
     </div>`;
   const isCancelled=o.cancelled||o.refunded||o.isRefund||false;
-  document.getElementById('inv-foot').innerHTML=`
+  const isWaiting = o.pm === 'waiting';
+
+  document.getElementById('inv-foot').innerHTML= isWaiting && !isCancelled ? `
+    <button class="btn btn-dn" style="flex:1" onclick="cancelWaitingOrder(${o.id})">🗑 Huỷ đơn</button>
+    <div style="flex:2; display:flex; gap:6px;">
+      <button class="btn btn-pr" style="flex:1; background:#16a34a; padding: 0" onclick="completePayment(${o.id}, 'cash')">Tiền mặt</button>
+      <button class="btn btn-pr" style="flex:1; background:#3b82f6; padding: 0" onclick="completePayment(${o.id}, 'transfer')">C.Khoản</button>
+    </div>`
+  : `
     <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-inv')">Đóng</button>
     ${isCancelled
-      ? `<div style="flex:2;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#dc2626">${o.isRefund?'↩️ Phiếu hoàn tiền':'✓ Đã hoàn tiền'}</div>`
+      ? `<div style="flex:2;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#dc2626">${o.isRefund?'↩️ Phiếu hoàn tiền':(o.cancelled&&!o.refunded&&!o.isRefund?'🗑 Đã huỷ':'✓ Đã hoàn tiền')}</div>`
       : `<button class="btn btn-dn" style="flex:1" onclick="refundOrder(${o.id})">↩️ Hoàn tiền</button>
          <button class="btn btn-pr" style="flex:2" onclick="doPrint()">🖨️ In hoá đơn</button>`
     }`;
@@ -749,6 +757,36 @@ function refundOrder(id){
     buildInvoices();
     toast('✓ Đã hoàn tiền '+fmt(o.total)+' · '+refundNo);
   },50);
+}
+
+function completePayment(id, newPm){
+  const o = S.orders.find(x=>x.id===id);
+  if(!o) return;
+  o.pm = newPm;
+  o.invoiceNo = o.invoiceNo.replace('HDCH', newPm==='cash'?'HDTM':(newPm==='transfer'?'HDCK':(newPm==='shopeefood'?'HDSF':'HDGB')));
+  saveStore();
+  fbSaveOrder(o);
+  closeOv('ov-inv');
+  setTimeout(()=>{
+    buildInvoices();
+    toast('✓ Đã thanh toán thành công');
+    if(S.tab==='report') buildReport();
+  }, 50);
+}
+
+function cancelWaitingOrder(id){
+  const o = S.orders.find(x=>x.id===id);
+  if(!o) return;
+  if(confirm("Xác nhận huỷ đơn chờ thanh toán này?")) {
+    o.cancelled = true;
+    saveStore();
+    fbSaveOrder(o);
+    closeOv('ov-inv');
+    setTimeout(()=>{
+      buildInvoices();
+      toast('✓ Đã huỷ đơn chưa thanh toán');
+    }, 50);
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1114,7 +1152,8 @@ function buildInvoices(){
         </div>
         ${o.refunded?`<div style="background:#fff8f0;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#c8873a;margin-bottom:6px">↩️ Đã hoàn tiền · ${o.refundInvoice||''}</div>`:''}
         ${o.isRefund?`<div style="background:#fee2e2;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#dc2626;margin-bottom:6px">↩️ Phiếu hoàn tiền · HĐ gốc: ${o.refundOf||''}</div>`:''}
-        <button class="btn ${(o.refunded||o.isRefund)?'btn-gh':'btn-pr'} btn-full" onclick="showInvById(${o.id})" style="font-size:13px;padding:10px">🧾 Xem hoá đơn</button>
+        ${(o.cancelled && !o.isRefund && !o.refunded) ? `<div style="background:#f3f4f6;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#6b7280;margin-bottom:6px">🗑 Đã huỷ</div>`:''}
+        <button class="btn ${(o.cancelled||o.refunded||o.isRefund)?'btn-gh':'btn-pr'} btn-full" onclick="showInvById(${o.id})" style="font-size:13px;padding:10px">🧾 Xem hoá đơn</button>
       </div>`;
     }).join('')}`;
 }
@@ -1381,7 +1420,7 @@ Object.assign(window,{
   addCart, chgQty, clearCart, buildPosCart,
   openCart, openPay, setPM, doCheckout,
   // Invoice
-  showInvById, doPrint, cancelOrder, refundOrder,
+  showInvById, doPrint, cancelOrder, refundOrder, completePayment, cancelWaitingOrder,
   // Report
   setRM, setRR,
   // Inventory tabs
