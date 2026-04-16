@@ -317,14 +317,15 @@ function buildMenuGrid(){
   const list=S.selCat==='Tất cả'?S.items:S.items.filter(m=>m.cat===S.selCat);
   el.innerHTML=list.map(item=>{
     const s=sz(item),hM=item.pM!=null,hL=item.pL!=null,p=pr(item);
+    const isTopping=item.cat==='Topping';
     return`<div class="mi" onclick="openItemDetail(${item.id})">
       <div class="mi-icon">${item.img?`<img class="mi-img" src="${item.img}" loading="lazy"/>`:CATS[item.cat]?.icon||'☕'}</div>
       <div class="mi-name">${item.n}</div>
       <div class="mi-cat">${item.cat}</div>
-      <div class="sz-row">
+      ${(!isTopping&&(hM||hL))?`<div class="sz-row">
         ${hM?`<button class="sz-btn${s==='M'?' on':''}" onclick="setSz(event,${item.id},'M')">M<br><span style="font-size:9px;font-weight:600">${fK(item.pM)}</span></button>`:''}
         ${hL?`<button class="sz-btn${s==='L'?' on':''}" onclick="setSz(event,${item.id},'L')">L<br><span style="font-size:9px;font-weight:600">${fK(item.pL)}</span></button>`:''}
-      </div>
+      </div>`:''}
       <div class="mi-foot">
         <span class="mi-price">${fmt(p)}</span>
         <button class="add-btn" onclick="addCart(${item.id});event.stopPropagation()">+</button>
@@ -394,6 +395,7 @@ function _renderDetailContent(bodyId,footerId){
   const item=S.items.find(i=>i.id===_detailId);if(!item)return;
   const s=sz(item),p=pr(item);
   const hM=item.pM!=null,hL=item.pL!=null;
+  const isTopping=item.cat==='Topping';
   const catInfo=CATS[item.cat]||{icon:'☕',color:'#6F4E37'};
   const margin=s==='M'?(item.pM-(item.cM||0)):( item.pL-(item.cL||0));
   const pct=p>0?Math.round(margin/p*100):0;
@@ -402,7 +404,7 @@ function _renderDetailContent(bodyId,footerId){
     <div class="idp-icon">${item.img?`<img class="idp-img" src="${item.img}"/>`:catInfo.icon}</div>
     <div class="idp-name">${item.n}</div>
     <div class="idp-cat"><span style="background:${catInfo.color}18;color:${catInfo.color};border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">${catInfo.icon} ${item.cat}</span></div>
-    ${(hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
+    ${(!isTopping&&hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
     <div class="idp-sz-row">
       ${hM?`<div class="idp-sz-btn${s==='M'?' on':''}" onclick="setDetailSz('M')">
         <div class="idp-sz-label">M</div>
