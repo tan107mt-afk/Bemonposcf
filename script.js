@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════
 const CRED={u:'bemoncoffee0509',p:'Bemon0509.'};
 const CATS={'Robusta':{icon:'☕',color:'#6F4E37'},'Arabica':{icon:'🫘',color:'#3E2723'},'Trà':{icon:'🍵',color:'#2E7D32'},'Khác':{icon:'🍫',color:'#AD1457'},'Topping':{icon:'✨',color:'#F57F17'}};
-const PMS=[{id:'cash',lb:'Tiền mặt',ic:'💵',c:'#16a34a'},{id:'transfer',lb:'Chuyển khoản',ic:'🏦',c:'#3b82f6'},{id:'shopeefood',lb:'ShopeeFood',ic:'🛵',c:'#f97316'},{id:'grabfood',lb:'GrabFood',ic:'🟢',c:'#16a34a'},{id:'waiting',lb:'Chờ thanh toán',ic:'⏳',c:'#f59e0b'}];
+const PMS=[{id:'cash',lb:'Tiền mặt',ic:'💵',c:'#16a34a'},{id:'transfer',lb:'Chuyển khoản',ic:'🏦',c:'#3b82f6'},{id:'shopeefood',lb:'ShopeeFood',ic:'🛵',c:'#f97316'},{id:'grabfood',lb:'GrabFood',ic:'🟢',c:'#16a34a'}];
 
 // ═══════════════════════════════════════
 //  STATE
@@ -14,8 +14,8 @@ const S={
   cart:[], orders:[],
   pm:'cash', curInv:null,
   rMode:'range', rRange:7,
-  rFrom:(()=>{const d=new Date();d.setDate(d.getDate()-6);const tz=d.getTimezoneOffset()*60000;return new Date(d.getTime()-tz).toISOString().slice(0,10)})(),
-  rTo:(()=>{const d=new Date();const tz=d.getTimezoneOffset()*60000;return new Date(d.getTime()-tz).toISOString().slice(0,10)})(),
+  rFrom:(()=>{const d=new Date();d.setDate(d.getDate()-6);return d.toISOString().slice(0,10)})(),
+  rTo:new Date().toISOString().slice(0,10),
   ifDate:'', ifPay:'all',
   itemEditId:null, ingEditId:null,
   pLines:[{ig:'',qty:'',uc:''}], pNote:'',
@@ -169,7 +169,7 @@ const fmt=n=>n==null?'—':new Intl.NumberFormat('vi-VN').format(n)+'đ';
 const fK=n=>n==null?'—':n>=1000000?(n/1000000).toFixed(1)+'M':(n/1000).toFixed(0)+'K';
 const uid=()=>Math.random().toString(36).slice(2,8).toUpperCase();
 const today=()=>new Date().toLocaleDateString('vi-VN');
-const isoNow=()=>{const d=new Date();return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
+const isoNow=()=>new Date().toISOString().slice(0,10);
 const within30=o=>{try{return(Date.now()-new Date(o.ts).getTime())<30*24*3600*1000}catch{return true}};
 const pm=id=>PMS.find(p=>p.id===id)||{lb:id||'—',ic:'💵',c:'#16a34a'};
 const sz=item=>S.sizes[item.id]||(item.pM!=null?'M':'L');
@@ -177,7 +177,7 @@ const pr=item=>{const s=sz(item);return s==='M'?(item.pM!=null?item.pM:item.pL):
 const cTotal=()=>S.cart.reduce((s,c)=>s+c.price*c.qty,0);
 const cCount=()=>S.cart.reduce((s,c)=>s+c.qty,0);
 const liveOrders=()=>S.orders; // Firebase lưu vĩnh viễn
-const activeOrders=()=>S.orders.filter(o=>!o.cancelled&&!o.refunded&&!o.isRefund&&o.pm!=='waiting'); // Bỏ đơn huỷ/chờ thanh toán khỏi doanh thu
+const activeOrders=()=>S.orders.filter(o=>!o.cancelled&&!o.refunded&&!o.isRefund); // Chỉ đơn chưa hoàn tiền
 
 // ═══════════════════════════════════════
 //  TOAST
@@ -317,15 +317,14 @@ function buildMenuGrid(){
   const list=S.selCat==='Tất cả'?S.items:S.items.filter(m=>m.cat===S.selCat);
   el.innerHTML=list.map(item=>{
     const s=sz(item),hM=item.pM!=null,hL=item.pL!=null,p=pr(item);
-    const isTopping=item.cat==='Topping';
     return`<div class="mi" onclick="openItemDetail(${item.id})">
-      <div class="mi-icon">${item.img?`<img class="mi-img" src="${item.img}" loading="lazy"/>`:CATS[item.cat]?.icon||'☕'}</div>
+      <div class="mi-icon">${CATS[item.cat]?.icon||'☕'}</div>
       <div class="mi-name">${item.n}</div>
       <div class="mi-cat">${item.cat}</div>
-      ${(!isTopping&&(hM||hL))?`<div class="sz-row">
+      <div class="sz-row">
         ${hM?`<button class="sz-btn${s==='M'?' on':''}" onclick="setSz(event,${item.id},'M')">M<br><span style="font-size:9px;font-weight:600">${fK(item.pM)}</span></button>`:''}
         ${hL?`<button class="sz-btn${s==='L'?' on':''}" onclick="setSz(event,${item.id},'L')">L<br><span style="font-size:9px;font-weight:600">${fK(item.pL)}</span></button>`:''}
-      </div>`:''}
+      </div>
       <div class="mi-foot">
         <span class="mi-price">${fmt(p)}</span>
         <button class="add-btn" onclick="addCart(${item.id});event.stopPropagation()">+</button>
@@ -340,10 +339,9 @@ function setSz(e,id,s){e.stopPropagation();S.sizes[id]=s;saveStore();buildMenuGr
 // ═══════════════════════════════════════
 let _detailId=null;
 let _detailQty=1;
-let _detailNote='';
 
 function openItemDetail(id){
-  _detailId=id;_detailQty=1;_detailNote='';
+  _detailId=id;_detailQty=1;
   const isMobile=window.innerWidth<768;
   if(isMobile){
     _renderDetailContent('idm-body','idm-footer');
@@ -375,17 +373,13 @@ function chgDetailQty(d){
   _renderDetailContent(isMobile?'idm-body':'idp-body', isMobile?'idm-footer':'idp-footer');
 }
 
-function setDetailNote(v){
-  _detailNote=v;
-}
-
 function addDetailToCart(){
   if(!_detailId)return;
   const item=S.items.find(i=>i.id===_detailId);if(!item)return;
-  const s=sz(item),p=pr(item),nNote=_detailNote.trim(),key=`${item.id}-${s}-${nNote}`;
+  const s=sz(item),p=pr(item),key=`${item.id}-${s}`;
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+_detailQty}:c);
-  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty,note:nNote}];
+  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty}];
   saveStore();buildHeader();buildPosCart();
   toast(`✓ Đã thêm ${_detailQty} × ${item.n} (${s})`);
   closeItemDetail();
@@ -395,16 +389,15 @@ function _renderDetailContent(bodyId,footerId){
   const item=S.items.find(i=>i.id===_detailId);if(!item)return;
   const s=sz(item),p=pr(item);
   const hM=item.pM!=null,hL=item.pL!=null;
-  const isTopping=item.cat==='Topping';
   const catInfo=CATS[item.cat]||{icon:'☕',color:'#6F4E37'};
   const margin=s==='M'?(item.pM-(item.cM||0)):( item.pL-(item.cL||0));
   const pct=p>0?Math.round(margin/p*100):0;
 
   document.getElementById(bodyId).innerHTML=`
-    <div class="idp-icon">${item.img?`<img class="idp-img" src="${item.img}"/>`:catInfo.icon}</div>
+    <div class="idp-icon">${catInfo.icon}</div>
     <div class="idp-name">${item.n}</div>
     <div class="idp-cat"><span style="background:${catInfo.color}18;color:${catInfo.color};border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">${catInfo.icon} ${item.cat}</span></div>
-    ${(!isTopping&&hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
+    ${(hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
     <div class="idp-sz-row">
       ${hM?`<div class="idp-sz-btn${s==='M'?' on':''}" onclick="setDetailSz('M')">
         <div class="idp-sz-label">M</div>
@@ -424,10 +417,6 @@ function _renderDetailContent(bodyId,footerId){
         <span style="color:var(--muted);font-weight:600">Lợi nhuận</span>
         <span style="font-weight:800;color:#16a34a">${fmt(margin)} <span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:5px;padding:1px 5px">${pct}%</span></span>
       </div>
-    </div>
-    <div style="margin-top:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">📝 Ghi chú (tuỳ chọn)</div>
-      <input type="text" placeholder="Vd: Ít đường, nhiều đá..." value="${_detailNote}" oninput="setDetailNote(this.value)" style="width:100%;font-size:13px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);outline:none;font-family:'DM Sans',sans-serif" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
     </div>`;
 
   document.getElementById(footerId).innerHTML=`
@@ -445,10 +434,10 @@ function _renderDetailContent(bodyId,footerId){
 
 function addCart(id){
   const item=S.items.find(i=>i.id===id);if(!item)return;
-  const s=sz(item),p=pr(item),key=`${id}-${s}-`;
+  const s=sz(item),p=pr(item),key=`${id}-${s}`;
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+1}:c);
-  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:1,note:''}];
+  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:1}];
   saveStore();
   buildHeader();buildPosCart();
 }
@@ -491,7 +480,6 @@ function buildPosCart(){
           <span class="sz-badge">${c.size}</span>
           <span class="pci-price">${fmt(c.price)}</span>
         </div>
-        ${c.note?`<div style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">📝 ${c.note}</div>`:''}
       </div>
       <div class="pci-qrow">
         <button class="pci-qbtn" onclick="chgQty('${c.key}',-1)">−</button>
@@ -520,7 +508,6 @@ function buildCartBody(){
           <span class="sz-badge">${c.size}</span>
           <span class="ci-price">${fmt(c.price)}</span>
         </div>
-        ${c.note?`<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:4px">📝 ${c.note}</div>`:''}
       </div>
       <div class="qrow">
         <button class="qbtn" onclick="chgQty('${c.key}',-1)">−</button>
@@ -545,10 +532,8 @@ function openPay(){buildPayBody();openOv('ov-pay')}
 function buildPayBody(){
   const tot=cTotal();
   const rows=S.cart.map(c=>`
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#4a3728;align-items:flex-start">
-      <div style="flex:1">${c.n} <span class="sz-badge">${c.size}</span> × ${c.qty}
-        ${c.note?`<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:3px">📝 ${c.note}</div>`:''}
-      </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#4a3728;align-items:center">
+      <div style="flex:1">${c.n} <span class="sz-badge">${c.size}</span> × ${c.qty}</div>
       <span style="color:var(--accent);font-weight:800;margin-left:8px">${fmt(c.price*c.qty)}</span>
     </div>`).join('');
   const pCards=PMS.map(p=>`
@@ -588,7 +573,7 @@ function doCheckout(){
     ts:now.toISOString(),
     isoDate:now.toISOString().slice(0,10),
     invoiceNo:(()=>{
-      const pmCode={'cash':'TM','transfer':'CK','shopeefood':'SF','grabfood':'GB','waiting':'CH'};
+      const pmCode={'cash':'TM','transfer':'CK','shopeefood':'SF','grabfood':'GB'};
       const code=pmCode[S.pm]||'XX';
       const d=now;
       const dd=String(d.getDate()).padStart(2,'0');
@@ -634,13 +619,7 @@ function buildInvSheet(){
   const p=pm(o.pm);
   const rows=o.items.map((it,i)=>`
     <div class="inv-tbl-row">
-      <div>
-        <div style="font-weight:700;font-size:12px">${it.n}</div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span class="sz-badge">${it.size}</span>
-        </div>
-        ${it.note?`<div style="font-size:10px;color:var(--text-muted);font-style:italic;margin-top:2px">📝 ${it.note}</div>`:''}
-      </div>
+      <div><div style="font-weight:700;font-size:12px">${it.n}</div><span class="sz-badge">${it.size}</span></div>
       <div class="tr" style="font-weight:700;font-size:12px">${it.qty}</div>
       <div class="tr" style="font-size:11px;color:var(--muted)">${fmt(it.price)}</div>
       <div class="tr" style="font-weight:900;font-size:12px;color:var(--accent)">${fmt(it.price*it.qty)}</div>
@@ -680,18 +659,10 @@ function buildInvSheet(){
       <div style="text-align:center;margin-bottom:18px;font-size:13px;color:var(--muted)">🙏 Cảm ơn quý khách! Hẹn gặp lại ☕</div>
     </div>`;
   const isCancelled=o.cancelled||o.refunded||o.isRefund||false;
-  const isWaiting = o.pm === 'waiting';
-
-  document.getElementById('inv-foot').innerHTML= isWaiting && !isCancelled ? `
-    <button class="btn btn-dn" style="flex:1" onclick="cancelWaitingOrder(${o.id})">🗑 Huỷ đơn</button>
-    <div style="flex:2; display:flex; gap:6px;">
-      <button class="btn btn-pr" style="flex:1; background:#16a34a; padding: 0" onclick="completePayment(${o.id}, 'cash')">Tiền mặt</button>
-      <button class="btn btn-pr" style="flex:1; background:#3b82f6; padding: 0" onclick="completePayment(${o.id}, 'transfer')">C.Khoản</button>
-    </div>`
-  : `
+  document.getElementById('inv-foot').innerHTML=`
     <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-inv')">Đóng</button>
     ${isCancelled
-      ? `<div style="flex:2;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#dc2626">${o.isRefund?'↩️ Phiếu hoàn tiền':(o.cancelled&&!o.refunded&&!o.isRefund?'🗑 Đã huỷ':'✓ Đã hoàn tiền')}</div>`
+      ? `<div style="flex:2;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#dc2626">${o.isRefund?'↩️ Phiếu hoàn tiền':'✓ Đã hoàn tiền'}</div>`
       : `<button class="btn btn-dn" style="flex:1" onclick="refundOrder(${o.id})">↩️ Hoàn tiền</button>
          <button class="btn btn-pr" style="flex:2" onclick="doPrint()">🖨️ In hoá đơn</button>`
     }`;
@@ -699,7 +670,7 @@ function buildInvSheet(){
 function doPrint(){
   const o=S.curInv;if(!o)return;
   const p=pm(o.pm);
-  const rows=o.items.map(it=>`<tr><td style="padding:6px 0;border-bottom:1px dashed #e8ddd0;font-size:13px">${it.n} (${it.size})${it.note?`<br><i style="font-size:11px;color:#8b6f4e">- ${it.note}</i>`:''}</td><td style="text-align:center;padding:6px 0;border-bottom:1px dashed #e8ddd0">${it.qty}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0">${fmt(it.price)}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0;font-weight:800">${fmt(it.price*it.qty)}</td></tr>`).join('');
+  const rows=o.items.map(it=>`<tr><td style="padding:6px 0;border-bottom:1px dashed #e8ddd0;font-size:13px">${it.n} (${it.size})</td><td style="text-align:center;padding:6px 0;border-bottom:1px dashed #e8ddd0">${it.qty}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0">${fmt(it.price)}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0;font-weight:800">${fmt(it.price*it.qty)}</td></tr>`).join('');
   const w=window.open('','_blank','width=420,height=700');
   if(!w){toast('⚠️ Trình duyệt đã chặn pop-up. Vui lòng cho phép.',true);return}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>HĐ ${o.invoiceNo}</title>
@@ -778,36 +749,6 @@ function refundOrder(id){
     buildInvoices();
     toast('✓ Đã hoàn tiền '+fmt(o.total)+' · '+refundNo);
   },50);
-}
-
-function completePayment(id, newPm){
-  const o = S.orders.find(x=>x.id===id);
-  if(!o) return;
-  o.pm = newPm;
-  o.invoiceNo = o.invoiceNo.replace('HDCH', newPm==='cash'?'HDTM':(newPm==='transfer'?'HDCK':(newPm==='shopeefood'?'HDSF':'HDGB')));
-  saveStore();
-  fbSaveOrder(o);
-  closeOv('ov-inv');
-  setTimeout(()=>{
-    buildInvoices();
-    toast('✓ Đã thanh toán thành công');
-    if(S.tab==='report') buildReport();
-  }, 50);
-}
-
-function cancelWaitingOrder(id){
-  const o = S.orders.find(x=>x.id===id);
-  if(!o) return;
-  if(confirm("Xác nhận huỷ đơn chờ thanh toán này?")) {
-    o.cancelled = true;
-    saveStore();
-    fbSaveOrder(o);
-    closeOv('ov-inv');
-    setTimeout(()=>{
-      buildInvoices();
-      toast('✓ Đã huỷ đơn chưa thanh toán');
-    }, 50);
-  }
 }
 
 // ═══════════════════════════════════════
@@ -1169,12 +1110,11 @@ function buildInvoices(){
           </div>
         </div>
         <div class="item-tags">
-          ${o.items.map(it=>`<span class="itag">${CATS[it.cat]?.icon||''} ${it.n} <b>${it.size}</b>×${it.qty}${it.note?` <i style="opacity:0.7">(${it.note})</i>`:''}</span>`).join('')}
+          ${o.items.map(it=>`<span class="itag">${CATS[it.cat]?.icon||''} ${it.n} <b>${it.size}</b>×${it.qty}</span>`).join('')}
         </div>
         ${o.refunded?`<div style="background:#fff8f0;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#c8873a;margin-bottom:6px">↩️ Đã hoàn tiền · ${o.refundInvoice||''}</div>`:''}
         ${o.isRefund?`<div style="background:#fee2e2;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#dc2626;margin-bottom:6px">↩️ Phiếu hoàn tiền · HĐ gốc: ${o.refundOf||''}</div>`:''}
-        ${(o.cancelled && !o.isRefund && !o.refunded) ? `<div style="background:#f3f4f6;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#6b7280;margin-bottom:6px">🗑 Đã huỷ</div>`:''}
-        <button class="btn ${(o.cancelled||o.refunded||o.isRefund)?'btn-gh':'btn-pr'} btn-full" onclick="showInvById(${o.id})" style="font-size:13px;padding:10px">🧾 Xem hoá đơn</button>
+        <button class="btn ${(o.refunded||o.isRefund)?'btn-gh':'btn-pr'} btn-full" onclick="showInvById(${o.id})" style="font-size:13px;padding:10px">🧾 Xem hoá đơn</button>
       </div>`;
     }).join('')}`;
 }
@@ -1182,13 +1122,13 @@ function buildInvoices(){
 // CSV export
 function exportCSV(invoices){
   const BOM='\uFEFF';
-  const hdr=['Số HĐ','Ngày','Giờ','Hình thức TT','Sản phẩm','Size','Ghi chú','Số lượng','Đơn giá','Thành tiền','Tổng HĐ'];
+  const hdr=['Số HĐ','Ngày','Giờ','Hình thức TT','Sản phẩm','Size','Số lượng','Đơn giá','Thành tiền','Tổng HĐ'];
   const rows=invoices.flatMap(o=>o.items.map((it,i)=>[
     i===0?`"${o.invoiceNo}"`:'',
     i===0?`"${o.date}"`:'',
     i===0?`"${o.time}"`:'',
     i===0?`"${pm(o.pm).lb}"`:'',
-    `"${it.n}"`,`"${it.size}"`,`"${it.note||''}"`,it.qty,it.price,it.price*it.qty,
+    `"${it.n}"`,`"${it.size}"`,it.qty,it.price,it.price*it.qty,
     i===0?o.total:'',
   ].join(',')));
   const blob=new Blob([BOM+[hdr.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8'});
@@ -1201,14 +1141,15 @@ function exportCSV(invoices){
 //  INVENTORY
 // ═══════════════════════════════════════
 function buildInventory(){
-  buildItemsTab();buildIngsTab();buildPurchTab();buildVoidTab();
+  buildItemsTab();buildIngsTab();buildPurchTab();buildVoidTab();buildStockTab();
 }
 function setInvTab(t){
   S.invTab=t;
-  document.querySelectorAll('.ist').forEach((b,i)=>b.classList.toggle('on',['items','ingredients','purchase','void'][i]===t));
+  document.querySelectorAll('.ist').forEach((b,i)=>b.classList.toggle('on',['items','ingredients','purchase','void','stock'][i]===t));
   document.querySelectorAll('.inv-sub').forEach(p=>p.classList.remove('on'));
   document.getElementById('isub-'+t).classList.add('on');
   buildHeader();
+  if(t==='stock') buildStockTab();
 }
 
 // Items tab
@@ -1221,7 +1162,7 @@ function buildItemsTab(){
     return`<div class="icard">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-weight:800;font-size:13px">${item.img?`<img src="${item.img}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;object-fit:cover;margin-right:4px"/>`:CATS[item.cat]?.icon||''} ${item.n}</div>
+          <div style="font-weight:800;font-size:13px">${CATS[item.cat]?.icon||''} ${item.n}</div>
           <span style="background:${CATS[item.cat]?.color||'#888'}20;color:${CATS[item.cat]?.color||'#888'};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">${item.cat}</span>
         </div>
         <div style="display:flex;gap:6px">
@@ -1240,37 +1181,68 @@ function buildItemsTab(){
   }).join('');
 }
 function delItem(id){S.items=S.items.filter(i=>i.id!==id);saveStore();buildItemsTab();buildMenuGrid()}
-function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:'',img:''});openOv('ov-item-form')}
-function openItemEdit(id){const item=S.items.find(i=>i.id===id);if(!item)return;S.itemEditId=id;document.getElementById('item-form-title').textContent='✏️ Chỉnh sửa';renderItemForm({n:item.n,cat:item.cat,pM:item.pM||'',pL:item.pL||'',cM:item.cM||'',cL:item.cL||'',img:item.img||''});openOv('ov-item-form')}
-function renderItemForm(f){
+function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:''});openOv('ov-item-form')}
+function openItemEdit(id){const item=S.items.find(i=>i.id===id);if(!item)return;S.itemEditId=id;document.getElementById('item-form-title').textContent='✏️ Chỉnh sửa';renderItemForm({n:item.n,cat:item.cat,pM:item.pM||'',pL:item.pL||'',cM:item.cM||'',cL:item.cL||''});openOv('ov-item-form')}
+let _itemHasL=true;
+function renderItemForm(f,hasL){
+  if(hasL===undefined) hasL = (f.pL!==null&&f.pL!==''&&f.pL!==undefined);
+  _itemHasL=hasL;
   document.getElementById('item-form-body').innerHTML=`
     <div class="fg"><label class="fl">Tên mặt hàng</label><input class="fi" id="if-n" value="${f.n}" placeholder="Vd: Cà phê muối"/></div>
-    <div class="fg"><label class="fl">Link hình ảnh (Nếu có)</label><input class="fi" id="if-img" value="${f.img||''}" placeholder="https://imgur.com/... (Bỏ trống sẽ lấy icon)"/></div>
     <div class="fg"><label class="fl">Danh mục</label><select class="fi" id="if-cat">${Object.keys(CATS).map(k=>`<option value="${k}"${f.cat===k?' selected':''}>${CATS[k].icon} ${k}</option>`).join('')}</select></div>
-    <div class="form-row">
-      <div class="fg"><label class="fl">Giá M (đ)</label><input class="fi" id="if-pM" type="number" value="${f.pM}" placeholder="16000"/></div>
-      <div class="fg"><label class="fl">Giá L (đ)</label><input class="fi" id="if-pL" type="number" value="${f.pL}" placeholder="20000"/></div>
-    </div>
-    <div class="cogs-box"><div class="cogs-title">💡 COGS — Chi phí hàng bán</div>
-      <div class="form-row">
-        <div class="fg"><label class="fl">COGS M (đ)</label><input class="fi" id="if-cM" type="number" value="${f.cM}" placeholder="3200"/></div>
-        <div class="fg"><label class="fl">COGS L (đ)</label><input class="fi" id="if-cL" type="number" value="${f.cL}" placeholder="4000"/></div>
+    
+    <!-- Toggle size L -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 14px;margin-bottom:14px;cursor:pointer" onclick="toggleSizeL()">
+      <div>
+        <div style="font-weight:600;font-size:13px">Có size L</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Bật để nhập giá & COGS cho size L</div>
+      </div>
+      <div id="toggle-L" style="width:42px;height:24px;border-radius:12px;background:${hasL?'var(--accent)':'#D1C4B8'};position:relative;transition:background .2s;flex-shrink:0">
+        <div style="position:absolute;top:3px;${hasL?'right:3px':'left:3px'};width:18px;height:18px;border-radius:9px;background:#fff;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
       </div>
     </div>
+
+    <!-- Size M -->
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Size M</div>
+    <div class="form-row">
+      <div class="fg"><label class="fl">Giá M (đ)</label><input class="fi" id="if-pM" type="number" value="${f.pM||''}" placeholder="16000"/></div>
+      <div class="fg"><label class="fl">COGS M (đ)</label><input class="fi" id="if-cM" type="number" value="${f.cM||''}" placeholder="3200"/></div>
+    </div>
+
+    <!-- Size L (ẩn/hiện theo toggle) -->
+    <div id="sizeL-section" style="display:${hasL?'block':'none'}">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Size L</div>
+      <div class="form-row">
+        <div class="fg"><label class="fl">Giá L (đ)</label><input class="fi" id="if-pL" type="number" value="${f.pL||''}" placeholder="20000"/></div>
+        <div class="fg"><label class="fl">COGS L (đ)</label><input class="fi" id="if-cL" type="number" value="${f.cL||''}" placeholder="4000"/></div>
+      </div>
+    </div>
+    <div id="sizeL-off" style="display:${hasL?'none':'block'};background:var(--bg);border:1px dashed var(--border);border-radius:var(--r-md);padding:10px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:14px">Không có size L</div>
+
     <div class="btn-row">
       <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-item-form')">Hủy</button>
       <button class="btn btn-pr" style="flex:2" onclick="saveItem()">💾 Lưu</button>
     </div>`;
 }
+function toggleSizeL(){
+  _itemHasL=!_itemHasL;
+  const tog=document.getElementById('toggle-L');
+  const sec=document.getElementById('sizeL-section');
+  const off=document.getElementById('sizeL-off');
+  if(tog){tog.style.background=_itemHasL?'var(--accent)':'#D1C4B8';tog.innerHTML=`<div style="position:absolute;top:3px;${_itemHasL?'right:3px':'left:3px'};width:18px;height:18px;border-radius:9px;background:#fff;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>`}
+  if(sec)sec.style.display=_itemHasL?'block':'none';
+  if(off)off.style.display=_itemHasL?'none':'block';
+}
 function saveItem(){
   const n=document.getElementById('if-n').value.trim();
   if(!n){toast('⚠️ Vui lòng nhập tên',true);return}
+  const pLEl=document.getElementById('if-pL');
+  const cLEl=document.getElementById('if-cL');
   const obj={n,cat:document.getElementById('if-cat').value,
-    img:document.getElementById('if-img').value.trim()||null,
     pM:document.getElementById('if-pM').value?+document.getElementById('if-pM').value:null,
-    pL:document.getElementById('if-pL').value?+document.getElementById('if-pL').value:null,
+    pL:(_itemHasL&&pLEl&&pLEl.value)?+pLEl.value:null,
     cM:document.getElementById('if-cM').value?+document.getElementById('if-cM').value:null,
-    cL:document.getElementById('if-cL').value?+document.getElementById('if-cL').value:null};
+    cL:(_itemHasL&&cLEl&&cLEl.value)?+cLEl.value:null};
   if(S.itemEditId!=null)S.items=S.items.map(i=>i.id===S.itemEditId?{...i,...obj}:i);
   else S.items=[...S.items,{...obj,id:Date.now()}];
   saveStore();
@@ -1438,12 +1410,12 @@ Object.assign(window,{
   // Navigation  
   goTab, selCat, setSz,
   // Item detail panel
-  openItemDetail, closeItemDetail, setDetailSz, chgDetailQty, addDetailToCart, setDetailNote,
+  openItemDetail, closeItemDetail, setDetailSz, chgDetailQty, addDetailToCart,
   // Cart
   addCart, chgQty, clearCart, buildPosCart,
   openCart, openPay, setPM, doCheckout,
   // Invoice
-  showInvById, doPrint, cancelOrder, refundOrder, completePayment, cancelWaitingOrder,
+  showInvById, doPrint, cancelOrder, refundOrder,
   // Report
   setRM, setRR,
   // Inventory tabs
