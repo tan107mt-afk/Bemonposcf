@@ -339,9 +339,10 @@ function setSz(e,id,s){e.stopPropagation();S.sizes[id]=s;saveStore();buildMenuGr
 // ═══════════════════════════════════════
 let _detailId=null;
 let _detailQty=1;
+let _detailNote='';
 
 function openItemDetail(id){
-  _detailId=id;_detailQty=1;
+  _detailId=id;_detailQty=1;_detailNote='';
   const isMobile=window.innerWidth<768;
   if(isMobile){
     _renderDetailContent('idm-body','idm-footer');
@@ -373,13 +374,17 @@ function chgDetailQty(d){
   _renderDetailContent(isMobile?'idm-body':'idp-body', isMobile?'idm-footer':'idp-footer');
 }
 
+function setDetailNote(v){
+  _detailNote=v;
+}
+
 function addDetailToCart(){
   if(!_detailId)return;
   const item=S.items.find(i=>i.id===_detailId);if(!item)return;
-  const s=sz(item),p=pr(item),key=`${item.id}-${s}`;
+  const s=sz(item),p=pr(item),nNote=_detailNote.trim(),key=`${item.id}-${s}-${nNote}`;
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+_detailQty}:c);
-  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty}];
+  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty,note:nNote}];
   saveStore();buildHeader();buildPosCart();
   toast(`✓ Đã thêm ${_detailQty} × ${item.n} (${s})`);
   closeItemDetail();
@@ -417,6 +422,10 @@ function _renderDetailContent(bodyId,footerId){
         <span style="color:var(--muted);font-weight:600">Lợi nhuận</span>
         <span style="font-weight:800;color:#16a34a">${fmt(margin)} <span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:5px;padding:1px 5px">${pct}%</span></span>
       </div>
+    </div>
+    <div style="margin-top:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">📝 Ghi chú (tuỳ chọn)</div>
+      <input type="text" placeholder="Vd: Ít đường, nhiều đá..." value="${_detailNote}" oninput="setDetailNote(this.value)" style="width:100%;font-size:13px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);outline:none;font-family:'DM Sans',sans-serif" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
     </div>`;
 
   document.getElementById(footerId).innerHTML=`
@@ -434,10 +443,10 @@ function _renderDetailContent(bodyId,footerId){
 
 function addCart(id){
   const item=S.items.find(i=>i.id===id);if(!item)return;
-  const s=sz(item),p=pr(item),key=`${id}-${s}`;
+  const s=sz(item),p=pr(item),key=`${id}-${s}-`;
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+1}:c);
-  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:1}];
+  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:1,note:''}];
   saveStore();
   buildHeader();buildPosCart();
 }
@@ -480,6 +489,7 @@ function buildPosCart(){
           <span class="sz-badge">${c.size}</span>
           <span class="pci-price">${fmt(c.price)}</span>
         </div>
+        ${c.note?`<div style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">📝 ${c.note}</div>`:''}
       </div>
       <div class="pci-qrow">
         <button class="pci-qbtn" onclick="chgQty('${c.key}',-1)">−</button>
@@ -508,6 +518,7 @@ function buildCartBody(){
           <span class="sz-badge">${c.size}</span>
           <span class="ci-price">${fmt(c.price)}</span>
         </div>
+        ${c.note?`<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:4px">📝 ${c.note}</div>`:''}
       </div>
       <div class="qrow">
         <button class="qbtn" onclick="chgQty('${c.key}',-1)">−</button>
@@ -532,8 +543,10 @@ function openPay(){buildPayBody();openOv('ov-pay')}
 function buildPayBody(){
   const tot=cTotal();
   const rows=S.cart.map(c=>`
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#4a3728;align-items:center">
-      <div style="flex:1">${c.n} <span class="sz-badge">${c.size}</span> × ${c.qty}</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#4a3728;align-items:flex-start">
+      <div style="flex:1">${c.n} <span class="sz-badge">${c.size}</span> × ${c.qty}
+        ${c.note?`<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:3px">📝 ${c.note}</div>`:''}
+      </div>
       <span style="color:var(--accent);font-weight:800;margin-left:8px">${fmt(c.price*c.qty)}</span>
     </div>`).join('');
   const pCards=PMS.map(p=>`
@@ -619,7 +632,13 @@ function buildInvSheet(){
   const p=pm(o.pm);
   const rows=o.items.map((it,i)=>`
     <div class="inv-tbl-row">
-      <div><div style="font-weight:700;font-size:12px">${it.n}</div><span class="sz-badge">${it.size}</span></div>
+      <div>
+        <div style="font-weight:700;font-size:12px">${it.n}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="sz-badge">${it.size}</span>
+        </div>
+        ${it.note?`<div style="font-size:10px;color:var(--text-muted);font-style:italic;margin-top:2px">📝 ${it.note}</div>`:''}
+      </div>
       <div class="tr" style="font-weight:700;font-size:12px">${it.qty}</div>
       <div class="tr" style="font-size:11px;color:var(--muted)">${fmt(it.price)}</div>
       <div class="tr" style="font-weight:900;font-size:12px;color:var(--accent)">${fmt(it.price*it.qty)}</div>
@@ -678,7 +697,7 @@ function buildInvSheet(){
 function doPrint(){
   const o=S.curInv;if(!o)return;
   const p=pm(o.pm);
-  const rows=o.items.map(it=>`<tr><td style="padding:6px 0;border-bottom:1px dashed #e8ddd0;font-size:13px">${it.n} (${it.size})</td><td style="text-align:center;padding:6px 0;border-bottom:1px dashed #e8ddd0">${it.qty}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0">${fmt(it.price)}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0;font-weight:800">${fmt(it.price*it.qty)}</td></tr>`).join('');
+  const rows=o.items.map(it=>`<tr><td style="padding:6px 0;border-bottom:1px dashed #e8ddd0;font-size:13px">${it.n} (${it.size})${it.note?`<br><i style="font-size:11px;color:#8b6f4e">- ${it.note}</i>`:''}</td><td style="text-align:center;padding:6px 0;border-bottom:1px dashed #e8ddd0">${it.qty}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0">${fmt(it.price)}</td><td style="text-align:right;padding:6px 0;border-bottom:1px dashed #e8ddd0;font-weight:800">${fmt(it.price*it.qty)}</td></tr>`).join('');
   const w=window.open('','_blank','width=420,height=700');
   if(!w){toast('⚠️ Trình duyệt đã chặn pop-up. Vui lòng cho phép.',true);return}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>HĐ ${o.invoiceNo}</title>
@@ -1148,7 +1167,7 @@ function buildInvoices(){
           </div>
         </div>
         <div class="item-tags">
-          ${o.items.map(it=>`<span class="itag">${CATS[it.cat]?.icon||''} ${it.n} <b>${it.size}</b>×${it.qty}</span>`).join('')}
+          ${o.items.map(it=>`<span class="itag">${CATS[it.cat]?.icon||''} ${it.n} <b>${it.size}</b>×${it.qty}${it.note?` <i style="opacity:0.7">(${it.note})</i>`:''}</span>`).join('')}
         </div>
         ${o.refunded?`<div style="background:#fff8f0;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#c8873a;margin-bottom:6px">↩️ Đã hoàn tiền · ${o.refundInvoice||''}</div>`:''}
         ${o.isRefund?`<div style="background:#fee2e2;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:800;color:#dc2626;margin-bottom:6px">↩️ Phiếu hoàn tiền · HĐ gốc: ${o.refundOf||''}</div>`:''}
@@ -1161,13 +1180,13 @@ function buildInvoices(){
 // CSV export
 function exportCSV(invoices){
   const BOM='\uFEFF';
-  const hdr=['Số HĐ','Ngày','Giờ','Hình thức TT','Sản phẩm','Size','Số lượng','Đơn giá','Thành tiền','Tổng HĐ'];
+  const hdr=['Số HĐ','Ngày','Giờ','Hình thức TT','Sản phẩm','Size','Ghi chú','Số lượng','Đơn giá','Thành tiền','Tổng HĐ'];
   const rows=invoices.flatMap(o=>o.items.map((it,i)=>[
     i===0?`"${o.invoiceNo}"`:'',
     i===0?`"${o.date}"`:'',
     i===0?`"${o.time}"`:'',
     i===0?`"${pm(o.pm).lb}"`:'',
-    `"${it.n}"`,`"${it.size}"`,it.qty,it.price,it.price*it.qty,
+    `"${it.n}"`,`"${it.size}"`,`"${it.note||''}"`,it.qty,it.price,it.price*it.qty,
     i===0?o.total:'',
   ].join(',')));
   const blob=new Blob([BOM+[hdr.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8'});
@@ -1415,7 +1434,7 @@ Object.assign(window,{
   // Navigation  
   goTab, selCat, setSz,
   // Item detail panel
-  openItemDetail, closeItemDetail, setDetailSz, chgDetailQty, addDetailToCart,
+  openItemDetail, closeItemDetail, setDetailSz, chgDetailQty, addDetailToCart, setDetailNote,
   // Cart
   addCart, chgQty, clearCart, buildPosCart,
   openCart, openPay, setPM, doCheckout,
