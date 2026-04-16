@@ -318,7 +318,7 @@ function buildMenuGrid(){
   el.innerHTML=list.map(item=>{
     const s=sz(item),hM=item.pM!=null,hL=item.pL!=null,p=pr(item);
     return`<div class="mi" onclick="openItemDetail(${item.id})">
-      <div class="mi-icon">${CATS[item.cat]?.icon||'☕'}</div>
+      <div class="mi-icon">${item.img?`<img class="mi-img" src="${item.img}" loading="lazy"/>`:CATS[item.cat]?.icon||'☕'}</div>
       <div class="mi-name">${item.n}</div>
       <div class="mi-cat">${item.cat}</div>
       <div class="sz-row">
@@ -399,7 +399,7 @@ function _renderDetailContent(bodyId,footerId){
   const pct=p>0?Math.round(margin/p*100):0;
 
   document.getElementById(bodyId).innerHTML=`
-    <div class="idp-icon">${catInfo.icon}</div>
+    <div class="idp-icon">${item.img?`<img class="idp-img" src="${item.img}"/>`:catInfo.icon}</div>
     <div class="idp-name">${item.n}</div>
     <div class="idp-cat"><span style="background:${catInfo.color}18;color:${catInfo.color};border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">${catInfo.icon} ${item.cat}</span></div>
     ${(hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
@@ -1219,7 +1219,7 @@ function buildItemsTab(){
     return`<div class="icard">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-weight:800;font-size:13px">${CATS[item.cat]?.icon||''} ${item.n}</div>
+          <div style="font-weight:800;font-size:13px">${item.img?`<img src="${item.img}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;object-fit:cover;margin-right:4px"/>`:CATS[item.cat]?.icon||''} ${item.n}</div>
           <span style="background:${CATS[item.cat]?.color||'#888'}20;color:${CATS[item.cat]?.color||'#888'};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">${item.cat}</span>
         </div>
         <div style="display:flex;gap:6px">
@@ -1238,11 +1238,12 @@ function buildItemsTab(){
   }).join('');
 }
 function delItem(id){S.items=S.items.filter(i=>i.id!==id);saveStore();buildItemsTab();buildMenuGrid()}
-function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:''});openOv('ov-item-form')}
-function openItemEdit(id){const item=S.items.find(i=>i.id===id);if(!item)return;S.itemEditId=id;document.getElementById('item-form-title').textContent='✏️ Chỉnh sửa';renderItemForm({n:item.n,cat:item.cat,pM:item.pM||'',pL:item.pL||'',cM:item.cM||'',cL:item.cL||''});openOv('ov-item-form')}
+function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:'',img:''});openOv('ov-item-form')}
+function openItemEdit(id){const item=S.items.find(i=>i.id===id);if(!item)return;S.itemEditId=id;document.getElementById('item-form-title').textContent='✏️ Chỉnh sửa';renderItemForm({n:item.n,cat:item.cat,pM:item.pM||'',pL:item.pL||'',cM:item.cM||'',cL:item.cL||'',img:item.img||''});openOv('ov-item-form')}
 function renderItemForm(f){
   document.getElementById('item-form-body').innerHTML=`
     <div class="fg"><label class="fl">Tên mặt hàng</label><input class="fi" id="if-n" value="${f.n}" placeholder="Vd: Cà phê muối"/></div>
+    <div class="fg"><label class="fl">Link hình ảnh (Nếu có)</label><input class="fi" id="if-img" value="${f.img||''}" placeholder="https://imgur.com/... (Bỏ trống sẽ lấy icon)"/></div>
     <div class="fg"><label class="fl">Danh mục</label><select class="fi" id="if-cat">${Object.keys(CATS).map(k=>`<option value="${k}"${f.cat===k?' selected':''}>${CATS[k].icon} ${k}</option>`).join('')}</select></div>
     <div class="form-row">
       <div class="fg"><label class="fl">Giá M (đ)</label><input class="fi" id="if-pM" type="number" value="${f.pM}" placeholder="16000"/></div>
@@ -1263,6 +1264,7 @@ function saveItem(){
   const n=document.getElementById('if-n').value.trim();
   if(!n){toast('⚠️ Vui lòng nhập tên',true);return}
   const obj={n,cat:document.getElementById('if-cat').value,
+    img:document.getElementById('if-img').value.trim()||null,
     pM:document.getElementById('if-pM').value?+document.getElementById('if-pM').value:null,
     pL:document.getElementById('if-pL').value?+document.getElementById('if-pL').value:null,
     cM:document.getElementById('if-cM').value?+document.getElementById('if-cM').value:null,
