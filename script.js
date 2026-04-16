@@ -14,8 +14,8 @@ const S={
   cart:[], orders:[],
   pm:'cash', curInv:null,
   rMode:'range', rRange:7,
-  rFrom:(()=>{const d=new Date();d.setDate(d.getDate()-6);return d.toISOString().slice(0,10)})(),
-  rTo:new Date().toISOString().slice(0,10),
+  rFrom:(()=>{const d=new Date();d.setDate(d.getDate()-6);const tz=d.getTimezoneOffset()*60000;return new Date(d.getTime()-tz).toISOString().slice(0,10)})(),
+  rTo:(()=>{const d=new Date();const tz=d.getTimezoneOffset()*60000;return new Date(d.getTime()-tz).toISOString().slice(0,10)})(),
   ifDate:'', ifPay:'all',
   itemEditId:null, ingEditId:null,
   pLines:[{ig:'',qty:'',uc:''}], pNote:'',
@@ -169,7 +169,7 @@ const fmt=n=>n==null?'—':new Intl.NumberFormat('vi-VN').format(n)+'đ';
 const fK=n=>n==null?'—':n>=1000000?(n/1000000).toFixed(1)+'M':(n/1000).toFixed(0)+'K';
 const uid=()=>Math.random().toString(36).slice(2,8).toUpperCase();
 const today=()=>new Date().toLocaleDateString('vi-VN');
-const isoNow=()=>new Date().toISOString().slice(0,10);
+const isoNow=()=>{const d=new Date();return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
 const within30=o=>{try{return(Date.now()-new Date(o.ts).getTime())<30*24*3600*1000}catch{return true}};
 const pm=id=>PMS.find(p=>p.id===id)||{lb:id||'—',ic:'💵',c:'#16a34a'};
 const sz=item=>S.sizes[item.id]||(item.pM!=null?'M':'L');
