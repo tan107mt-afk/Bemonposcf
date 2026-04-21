@@ -230,7 +230,35 @@ input[type=date]{font-size:14px!important}
 .empty-tx{font-weight:700;font-size:14px}
 .empty-sub{font-size:12px;margin-top:6px}
 
-/* ── Inventory page layout ── */
+/* ── Item Detail Panel (desktop sidebar) ── */
+#item-detail-panel{width:300px;flex-shrink:0;background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.32,1,.55,1);overflow:hidden;position:fixed;right:0;top:0;bottom:0;z-index:300}
+#item-detail-panel.open{transform:translateX(0)}
+.idp-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.idp-title{font-weight:700;font-size:14px}
+.idp-close{background:var(--bg);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.idp-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.idp-footer{padding:14px 16px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+14px);border-top:1px solid var(--border);background:#fff;flex-shrink:0}
+.idp-icon{font-size:52px;text-align:center;margin-bottom:12px;background:linear-gradient(135deg,#fdf6ee,#f0e8dc);border-radius:16px;padding:18px 0}
+.idp-name{font-weight:800;font-size:18px;margin-bottom:4px;letter-spacing:-.3px}
+.idp-cat{font-size:12px;margin-bottom:16px}
+.idp-sz-row{display:flex;gap:8px;margin-bottom:16px}
+.idp-sz-btn{flex:1;border:2px solid var(--border);border-radius:12px;padding:12px 8px;cursor:pointer;background:var(--bg);text-align:center;transition:all .12s}
+.idp-sz-btn.on{border-color:var(--accent);background:#fff8f0}
+.idp-sz-label{font-weight:800;font-size:16px}
+.idp-sz-price{font-size:12px;font-weight:600;color:var(--accent);margin-top:3px}
+.idp-qty-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.idp-price{font-weight:900;font-size:22px;color:var(--accent)}
+/* ── Item Detail Mobile (bottom sheet) ── */
+#item-detail-mobile{display:none}
+@media(max-width:767px){
+  #item-detail-panel{display:none!important}
+  #item-detail-mobile{display:block;position:fixed;inset:0;z-index:450;visibility:hidden;pointer-events:none}
+  #item-detail-mobile.open{visibility:visible;pointer-events:auto}
+  #item-detail-mobile .ov-bg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .25s}
+  #item-detail-mobile.open .ov-bg{opacity:1}
+  #item-detail-mobile .sh-body{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.32,1,.55,1)}
+  #item-detail-mobile.open .sh-body{transform:translateY(0)}
+}
 #page-inventory{padding:0}
 .inv-page-body{position:absolute;top:47px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .inv-sub{display:none;padding:14px 14px 90px}
@@ -706,7 +734,7 @@ function buildMenuGrid(){
   const list=S.selCat==='Tất cả'?S.items:S.items.filter(m=>m.cat===S.selCat);
   el.innerHTML=list.map(item=>{
     const s=sz(item),hM=item.pM!=null,hL=item.pL!=null,p=pr(item);
-    return`<div class="mi" onclick="addCart(${item.id})">
+    return`<div class="mi" onclick="openItemDetail(${item.id})">
       <div class="mi-icon">${CATS[item.cat]?.icon||'☕'}</div>
       <div class="mi-name">${item.n}</div>
       <div class="mi-cat">${item.cat}</div>
@@ -722,6 +750,99 @@ function buildMenuGrid(){
   }).join('');
 }
 function setSz(e,id,s){e.stopPropagation();S.sizes[id]=s;buildMenuGrid()}
+
+// ═══════════════════════════════════════
+//  ITEM DETAIL (mobile bottom sheet + desktop panel)
+// ═══════════════════════════════════════
+let _detailId=null;
+let _detailQty=1;
+
+function openItemDetail(id){
+  _detailId=id;_detailQty=1;
+  const isMobile=window.innerWidth<768;
+  if(isMobile){
+    _renderDetailContent('idm-body','idm-footer');
+    document.getElementById('idm-title').textContent=S.items.find(i=>i.id===id)?.n||'Chi tiết món';
+    document.getElementById('item-detail-mobile').classList.add('open');
+  } else {
+    _renderDetailContent('idp-body','idp-footer');
+    document.getElementById('item-detail-panel').classList.add('open');
+  }
+}
+
+function closeItemDetail(){
+  const mob=document.getElementById('item-detail-mobile');
+  const pan=document.getElementById('item-detail-panel');
+  if(mob)mob.classList.remove('open');
+  if(pan)pan.classList.remove('open');
+  _detailId=null;
+}
+
+function setDetailSz(s){
+  if(!_detailId)return;
+  S.sizes[_detailId]=s;
+  const isMobile=window.innerWidth<768;
+  _renderDetailContent(isMobile?'idm-body':'idp-body',isMobile?'idm-footer':'idp-footer');
+  buildMenuGrid();
+}
+
+function chgDetailQty(d){
+  _detailQty=Math.max(1,_detailQty+d);
+  const isMobile=window.innerWidth<768;
+  _renderDetailContent(isMobile?'idm-body':'idp-body',isMobile?'idm-footer':'idp-footer');
+}
+
+function addDetailToCart(){
+  if(!_detailId)return;
+  const item=S.items.find(i=>i.id===_detailId);if(!item)return;
+  const s=sz(item),p=pr(item),key=`${item.id}-${s}`;
+  const ex=S.cart.find(c=>c.key===key);
+  if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+_detailQty}:c);
+  else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty}];
+  save();buildHeader();
+  toast(`✓ Đã thêm ${_detailQty} × ${item.n} (${s})`);
+  closeItemDetail();
+}
+
+function _renderDetailContent(bodyId,footerId){
+  const item=S.items.find(i=>i.id===_detailId);if(!item)return;
+  const s=sz(item),p=pr(item);
+  const hM=item.pM!=null,hL=item.pL!=null;
+  const catInfo=CATS[item.cat]||{icon:'☕',color:'#6F4E37'};
+  const cogs=s==='M'?(item.cM||0):(item.cL||0);
+  const margin=p-cogs;
+  const pct=p>0?Math.round(margin/p*100):0;
+  document.getElementById(bodyId).innerHTML=`
+    <div class="idp-icon">${catInfo.icon}</div>
+    <div class="idp-name">${item.n}</div>
+    <div class="idp-cat"><span style="background:${catInfo.color}18;color:${catInfo.color};border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">${catInfo.icon} ${item.cat}</span></div>
+    ${(hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
+    <div class="idp-sz-row">
+      ${hM?`<div class="idp-sz-btn${s==='M'?' on':''}" onclick="setDetailSz('M')"><div class="idp-sz-label">M</div><div class="idp-sz-price">${fmt(item.pM)}</div></div>`:''}
+      ${hL?`<div class="idp-sz-btn${s==='L'?' on':''}" onclick="setDetailSz('L')"><div class="idp-sz-label">L</div><div class="idp-sz-price">${fmt(item.pL)}</div></div>`:''}
+    </div>`:''}
+    <div style="background:#faf7f3;border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-top:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="color:var(--muted);font-weight:600">Giá bán</span>
+        <span style="font-weight:900;color:var(--accent)">${fmt(p)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--muted);font-weight:600">Lợi nhuận</span>
+        <span style="font-weight:800;color:#16a34a">${fmt(margin)} <span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:5px;padding:1px 5px">${pct}%</span></span>
+      </div>
+    </div>`;
+  document.getElementById(footerId).innerHTML=`
+    <div class="idp-qty-row">
+      <span style="font-size:13px;font-weight:700;color:var(--muted)">Số lượng</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(-1)">−</button>
+        <span style="font-weight:900;font-size:18px;min-width:24px;text-align:center">${_detailQty}</span>
+        <button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(1)">+</button>
+      </div>
+      <div class="idp-price">${fmt(p*_detailQty)}</div>
+    </div>
+    <button class="btn btn-pr btn-full" onclick="addDetailToCart()" style="font-size:15px;padding:14px">🛒 Thêm vào giỏ</button>`;
+}
 
 function addCart(id){
   const item=S.items.find(i=>i.id===id);if(!item)return;
