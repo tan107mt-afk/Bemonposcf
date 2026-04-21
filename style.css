@@ -246,7 +246,7 @@ input[type=date]{font-size:var(--text-md)!important}
 .rng-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pay-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-light)}
 .pay-row:last-child{border-bottom:none}
-.chart-wrap{position:relative;height:220px}
+.chart-wrap{position:relative;height:200px}
 
 /* Invoices */
 .inv-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-xs)}
