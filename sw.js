@@ -1,4 +1,5 @@
-const CACHE_NAME = 'bemon-pos-v2';
+// Đổi version → browser tự xoá cache cũ và tải file mới
+const CACHE_NAME = 'bemon-pos-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -20,6 +21,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
+          // Xoá tất cả cache cũ của bemon-pos
           if (cacheName !== CACHE_NAME && cacheName.startsWith('bemon-pos')) {
             return caches.delete(cacheName);
           }
