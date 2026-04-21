@@ -13,6 +13,7 @@
 html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:'Nunito',sans-serif}
 button,input,select,textarea{font-family:'Nunito',sans-serif}
 input,select{-webkit-appearance:none;appearance:none}
+input:not([type=date]){font-size:16px!important;-webkit-transform:translateZ(0);transform:translateZ(0)}
 input[type=date]{font-size:14px!important}
 @keyframes slideUp{from{transform:translateY(100%);opacity:.5}to{transform:translateY(0);opacity:1}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -20,7 +21,7 @@ input[type=date]{font-size:14px!important}
 .fade-in{animation:fadeIn .22s ease}
 
 /* ── Layout ── */
-#login-wrap{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#fdf6ee,#f0e8dc);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#login-wrap{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#fdf6ee,#f0e8dc);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;-webkit-transform:translateZ(0);transform:translateZ(0)}
 #app{height:100dvh;display:flex;flex-direction:column;display:none}
 #header{background:#fff;border-bottom:1px solid var(--border);padding:12px 16px;padding-top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 6px rgba(120,80,20,.06);z-index:50;position:relative}
 #content-area{flex:1;overflow:hidden;position:relative}
@@ -56,8 +57,8 @@ input[type=date]{font-size:14px!important}
 .fm .sh-body{max-height:93vh}
 
 /* ── Login ── */
-.login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 36px rgba(120,80,20,.12)}
-.login-logo{width:70px;height:70px;display:block;margin:0 auto 12px}
+.login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 36px rgba(120,80,20,.12);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
+.login-logo{width:88px;height:88px;display:block;margin:0 auto 12px;object-fit:contain}
 .login-brand{font-family:'Playfair Display',serif;font-size:26px;color:var(--brown);font-weight:700;text-align:center}
 .login-sub{font-size:11px;color:var(--sub);text-align:center;letter-spacing:1.5px;margin-top:4px;margin-bottom:28px}
 .login-err{background:#fee2e2;color:#dc2626;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:14px;display:none;text-align:center}
@@ -67,7 +68,7 @@ input[type=date]{font-size:14px!important}
 /* ── Form fields ── */
 .fg{margin-bottom:14px}
 .fl{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px}
-.fi{width:100%;background:#faf7f3;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.fi{width:100%;background:#faf7f3;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:16px;color:var(--text);outline:none;transition:border-color .15s;-webkit-transform:translateZ(0);transform:translateZ(0);position:relative;-webkit-appearance:none}
 .fi:focus{border-color:var(--accent)}
 .fi-pass{padding-right:42px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -241,19 +242,7 @@ input[type=date]{font-size:14px!important}
 <!-- ── LOGIN ── -->
 <div id="login-wrap">
   <div style="text-align:center;margin-bottom:24px">
-    <svg class="login-logo" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g transform="rotate(15,100,110)">
-      <rect x="117" y="18" width="11" height="52" rx="4" fill="#3d1f0a" transform="rotate(12,122,44)"/>
-      <rect x="32" y="52" width="118" height="20" rx="8" fill="#3d1f0a"/>
-      <rect x="24" y="58" width="28" height="14" rx="5" fill="#3d1f0a"/>
-      <path d="M44 72 L148 72 L140 108 L52 108 Z" fill="#3d1f0a"/>
-      <rect x="30" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <rect x="146" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <polygon points="30,118 54,118 105,168 81,168" fill="#3d1f0a"/>
-      <polygon points="146,118 170,118 119,168 95,168" fill="#3d1f0a"/>
-      <polygon points="81,168 119,168 119,206 81,206" fill="#3d1f0a"/>
-    </g>
-  </svg>
+    <img src="logo.png" class="login-logo" alt="Bemon Coffee"/>
     <div class="login-brand">Bemon Coffee</div>
     <div class="login-sub">QUẢN LÝ BÁN HÀNG</div>
   </div>
@@ -274,19 +263,7 @@ input[type=date]{font-size:14px!important}
 <div id="app">
   <div id="header">
     <div style="display:flex;align-items:center;gap:9px">
-      <svg style="width:34px;height:34px;flex-shrink:0" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g transform="rotate(15,100,110)">
-      <rect x="117" y="18" width="11" height="52" rx="4" fill="#3d1f0a" transform="rotate(12,122,44)"/>
-      <rect x="32" y="52" width="118" height="20" rx="8" fill="#3d1f0a"/>
-      <rect x="24" y="58" width="28" height="14" rx="5" fill="#3d1f0a"/>
-      <path d="M44 72 L148 72 L140 108 L52 108 Z" fill="#3d1f0a"/>
-      <rect x="30" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <rect x="146" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <polygon points="30,118 54,118 105,168 81,168" fill="#3d1f0a"/>
-      <polygon points="146,118 170,118 119,168 95,168" fill="#3d1f0a"/>
-      <polygon points="81,168 119,168 119,206 81,206" fill="#3d1f0a"/>
-    </g>
-  </svg>
+      <img src="logo.png" style="width:36px;height:36px;flex-shrink:0;object-fit:contain" alt="Bemon Coffee"/>
       <div>
         <div style="font-family:'Playfair Display',serif;font-size:17px;color:var(--brown);line-height:1">Bemon Coffee</div>
         <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">171 TRƯƠNG ĐỊNH</div>
@@ -335,6 +312,30 @@ input[type=date]{font-size:14px!important}
 </div>
 
 <div id="toast"></div>
+
+<!-- ── ITEM DETAIL: DESKTOP SIDEBAR ── -->
+<aside id="item-detail-panel">
+  <div class="idp-header">
+    <div class="idp-title" id="idp-title">Chi tiết món</div>
+    <button class="idp-close" onclick="closeItemDetail()">✕</button>
+  </div>
+  <div class="idp-body" id="idp-body"></div>
+  <div class="idp-footer" id="idp-footer"></div>
+</aside>
+
+<!-- ── ITEM DETAIL: MOBILE BOTTOM SHEET ── -->
+<div id="item-detail-mobile">
+  <div class="ov-bg" onclick="closeItemDetail()"></div>
+  <div class="sh-body">
+    <div class="sh-handle"></div>
+    <div class="sh-hdr">
+      <div class="sh-title" id="idm-title">Chi tiết món</div>
+      <button class="sh-close" onclick="closeItemDetail()">✕</button>
+    </div>
+    <div id="idm-body" style="flex:1;overflow-y:auto;padding:0 18px;-webkit-overflow-scrolling:touch"></div>
+    <div id="idm-footer" style="padding:14px 18px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+14px);border-top:1px solid var(--border-light);background:#fff;flex-shrink:0"></div>
+  </div>
+</div>
 
 <!-- ── SHEETS ── -->
 <div class="overlay" id="ov-cart">
@@ -860,19 +861,7 @@ function buildInvSheet(){
   document.getElementById('inv-body').innerHTML=`
     <div style="padding:10px 20px 0">
       <div style="text-align:center;margin-bottom:14px;padding-top:4px">
-        <svg width="46" height="56" viewBox="0 0 200 220" fill="none" style="display:block;margin:0 auto 8px">
-    <g transform="rotate(15,100,110)">
-      <rect x="117" y="18" width="11" height="52" rx="4" fill="#3d1f0a" transform="rotate(12,122,44)"/>
-      <rect x="32" y="52" width="118" height="20" rx="8" fill="#3d1f0a"/>
-      <rect x="24" y="58" width="28" height="14" rx="5" fill="#3d1f0a"/>
-      <path d="M44 72 L148 72 L140 108 L52 108 Z" fill="#3d1f0a"/>
-      <rect x="30" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <rect x="146" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
-      <polygon points="30,118 54,118 105,168 81,168" fill="#3d1f0a"/>
-      <polygon points="146,118 170,118 119,168 95,168" fill="#3d1f0a"/>
-      <polygon points="81,168 119,168 119,206 81,206" fill="#3d1f0a"/>
-    </g>
-  </svg>
+        <img src="logo.png" style="width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 8px" alt="Bemon Coffee"/>
         <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);font-weight:700">BEMON COFFEE</div>
         <div style="font-size:11px;color:var(--sub);margin-top:2px">171 Trương Định, Tân Mai · 0941.615.912</div>
       </div>
