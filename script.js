@@ -70,7 +70,7 @@ const S={
     {id:'i18',n:'Chanh',u:'ml',cp:0.05,st:800},
   ],
   purchases:[], voids:[],
-  chart:null,
+  chart:[],  // mảng 3 chart instances
 };
 
 // ═══════════════════════════════════════
@@ -885,18 +885,43 @@ function buildReport(){
       </div>`).join('')}
     </div>
 
-    <!-- Stacked bar chart -->
+    <!-- Chart 1: Tổng doanh thu - Bar -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-weight:800;font-size:13px;color:var(--text)">💰 ${isSingle?'Doanh thu & COGS theo giờ':'Doanh thu & COGS theo ngày'}</div>
-        <div class="chart-legend">
-          <div class="cl-item"><div class="cl-dot" style="background:#e8d4b8"></div>Net</div>
-          <div class="cl-item"><div class="cl-dot" style="background:#fbbf24"></div>COGS</div>
-          <div class="cl-item"><div class="cl-dot" style="background:#7c3aed"></div>Profit</div>
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--text)">Tổng doanh thu</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:1px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biểu đồ thanh</div>
         </div>
+        <span style="font-weight:900;font-size:14px;color:#6bb84d">${fK(tGross)}đ</span>
       </div>
-      ${hasChart?`<div class="chart-wrap"><canvas id="rchart"></canvas></div>`
-        :`<div class="empty" style="padding:28px 0"><div class="empty-ic">📊</div><div class="empty-tx">Không có dữ liệu trong khoảng này</div></div>`}
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart1"></canvas></div>`
+        :`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
+    </div>
+
+    <!-- Chart 2: Doanh thu thuần - Area -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--text)">Doanh thu thuần</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:1px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biểu đồ khu vực</div>
+        </div>
+        <span style="font-weight:900;font-size:14px;color:#16a34a">${fK(tNet)}đ</span>
+      </div>
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart2"></canvas></div>`
+        :`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
+    </div>
+
+    <!-- Chart 3: Lợi nhuận - Bar tím -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--text)">Lợi nhuận</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:1px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biên ${mg}%</div>
+        </div>
+        <span style="font-weight:900;font-size:14px;color:#7c3aed">${fK(tProfit)}đ</span>
+      </div>
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart3"></canvas></div>`
+        :`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
     </div>
 
     <!-- Payment breakdown -->
@@ -948,26 +973,78 @@ function buildReport(){
       </div>
     </div>`:''}`;
 
-  // Draw stacked chart
+  // ── Vẽ 3 biểu đồ ──
+  if(S.chart){if(Array.isArray(S.chart))S.chart.forEach(c=>c&&c.destroy());else S.chart.destroy();S.chart=[];}
   if(hasChart){
-    if(S.chart){S.chart.destroy();S.chart=null}
-    const ctx=document.getElementById('rchart');
-    if(ctx){
-      S.chart=new Chart(ctx,{type:'bar',
-        data:{labels:cLabels,datasets:[
-          {label:'Net',data:cNet,backgroundColor:'#e8d4b8',borderRadius:0,stack:'s'},
-          {label:'COGS',data:cCogs,backgroundColor:'#fbbf24',stack:'p'},
-          {label:'Profit',data:cProfit,backgroundColor:'#7c3aed',borderRadius:{topLeft:5,topRight:5},stack:'p'},
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
-          scales:{
-            x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:0}},
-            y:{stacked:false,grid:{color:'#f0e8dc'},ticks:{font:{size:9},callback:v=>fK(v)},beginAtZero:true}
+    const commonOpts={
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fK(c.raw)+'đ'}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:0}},
+        y:{grid:{color:'#f0eae0'},border:{dash:[3,3]},ticks:{font:{size:9},callback:v=>fK(v)},beginAtZero:true}
+      }
+    };
+
+    // Chart 1: Tổng doanh thu — Bar chart xanh lá (như Loyverse)
+    const c1=document.getElementById('rchart1');
+    if(c1){
+      const maxV=Math.max(...cNet);
+      const ch1=new Chart(c1,{type:'bar',
+        data:{labels:cLabels,datasets:[{
+          label:'Tổng doanh thu',data:cNet,
+          backgroundColor:cNet.map(v=>v===maxV?'#6cc04a':'#8ed16b'),
+          borderRadius:4,borderSkipped:false,
+        }]},
+        options:{...commonOpts,
+          plugins:{...commonOpts.plugins,
+            tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Doanh thu: '+fmt(c.raw)}}
           }
         }
       });
+      S.chart.push(ch1);
     }
+
+    // Chart 2: Doanh thu thuần — Area (line + fill) xanh lá
+    const c2=document.getElementById('rchart2');
+    if(c2){
+      const ch2=new Chart(c2,{type:'line',
+        data:{labels:cLabels,datasets:[{
+          label:'Doanh thu thuần',data:cNet,
+          borderColor:'#6cc04a',borderWidth:2.5,
+          backgroundColor:'rgba(108,192,74,0.12)',
+          fill:true,tension:0.35,
+          pointBackgroundColor:'#fff',pointBorderColor:'#6cc04a',
+          pointBorderWidth:2,pointRadius:4,pointHoverRadius:6,
+        }]},
+        options:{...commonOpts,
+          plugins:{...commonOpts.plugins,
+            tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Net: '+fmt(c.raw)}}
+          }
+        }
+      });
+      S.chart.push(ch2);
+    }
+
+    // Chart 3: Lợi nhuận — Bar tím
+    const c3=document.getElementById('rchart3');
+    if(c3){
+      const maxP=Math.max(...cProfit);
+      const ch3=new Chart(c3,{type:'bar',
+        data:{labels:cLabels,datasets:[{
+          label:'Lợi nhuận',data:cProfit,
+          backgroundColor:cProfit.map(v=>v===maxP?'#7c3aed':v<0?'#ef4444':'#a78bfa'),
+          borderRadius:4,borderSkipped:false,
+        }]},
+        options:{...commonOpts,
+          plugins:{...commonOpts.plugins,
+            tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Lợi nhuận: '+fmt(c.raw)}}
+          }
+        }
+      });
+      S.chart.push(ch3);
+    }
+  } else {
+    S.chart=[];
   }
 }
 function setRM(m){S.rMode=m;buildReport()}
