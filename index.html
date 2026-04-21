@@ -13,7 +13,7 @@
 html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:'Nunito',sans-serif}
 button,input,select,textarea{font-family:'Nunito',sans-serif}
 input,select{-webkit-appearance:none;appearance:none}
-input:not([type=date]){font-size:16px!important;-webkit-transform:translateZ(0);transform:translateZ(0)}
+input[type=text],input[type=password],input[type=number]{font-size:16px!important;-webkit-transform:translateZ(0);transform:translateZ(0)}
 input[type=date]{font-size:14px!important}
 @keyframes slideUp{from{transform:translateY(100%);opacity:.5}to{transform:translateY(0);opacity:1}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -21,7 +21,7 @@ input[type=date]{font-size:14px!important}
 .fade-in{animation:fadeIn .22s ease}
 
 /* ── Layout ── */
-#login-wrap{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#fdf6ee,#f0e8dc);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;-webkit-transform:translateZ(0);transform:translateZ(0)}
+#login-wrap{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#fdf6ee,#f0e8dc);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 #app{height:100dvh;display:flex;flex-direction:column;display:none}
 #header{background:#fff;border-bottom:1px solid var(--border);padding:12px 16px;padding-top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 6px rgba(120,80,20,.06);z-index:50;position:relative}
 #content-area{flex:1;overflow:hidden;position:relative}
@@ -57,8 +57,8 @@ input[type=date]{font-size:14px!important}
 .fm .sh-body{max-height:93vh}
 
 /* ── Login ── */
-.login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 36px rgba(120,80,20,.12);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
-.login-logo{width:88px;height:88px;display:block;margin:0 auto 12px;object-fit:contain}
+.login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 36px rgba(120,80,20,.12)}
+.login-logo{width:70px;height:70px;display:block;margin:0 auto 12px}
 .login-brand{font-family:'Playfair Display',serif;font-size:26px;color:var(--brown);font-weight:700;text-align:center}
 .login-sub{font-size:11px;color:var(--sub);text-align:center;letter-spacing:1.5px;margin-top:4px;margin-bottom:28px}
 .login-err{background:#fee2e2;color:#dc2626;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:14px;display:none;text-align:center}
@@ -68,7 +68,7 @@ input[type=date]{font-size:14px!important}
 /* ── Form fields ── */
 .fg{margin-bottom:14px}
 .fl{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px}
-.fi{width:100%;background:#faf7f3;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:16px;color:var(--text);outline:none;transition:border-color .15s;-webkit-transform:translateZ(0);transform:translateZ(0);position:relative;-webkit-appearance:none}
+.fi{width:100%;background:#faf7f3;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:16px;color:var(--text);outline:none;transition:border-color .15s;-webkit-transform:translateZ(0);transform:translateZ(0)}
 .fi:focus{border-color:var(--accent)}
 .fi-pass{padding-right:42px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -230,35 +230,19 @@ input[type=date]{font-size:14px!important}
 .empty-tx{font-weight:700;font-size:14px}
 .empty-sub{font-size:12px;margin-top:6px}
 
-/* ── Item Detail Panel (desktop sidebar) ── */
-#item-detail-panel{width:300px;flex-shrink:0;background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.32,1,.55,1);overflow:hidden;position:fixed;right:0;top:0;bottom:0;z-index:300}
-#item-detail-panel.open{transform:translateX(0)}
-.idp-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.idp-title{font-weight:700;font-size:14px}
-.idp-close{background:var(--bg);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center}
-.idp-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
-.idp-footer{padding:14px 16px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+14px);border-top:1px solid var(--border);background:#fff;flex-shrink:0}
-.idp-icon{font-size:52px;text-align:center;margin-bottom:12px;background:linear-gradient(135deg,#fdf6ee,#f0e8dc);border-radius:16px;padding:18px 0}
-.idp-name{font-weight:800;font-size:18px;margin-bottom:4px;letter-spacing:-.3px}
-.idp-cat{font-size:12px;margin-bottom:16px}
+/* ── Item Detail ── */
+.idp-icon{font-size:52px;text-align:center;margin:4px 0 12px;background:linear-gradient(135deg,#fdf6ee,#f0e8dc);border-radius:16px;padding:16px 0}
+.idp-name{font-weight:800;font-size:18px;margin-bottom:4px}
+.idp-cat{font-size:12px;margin-bottom:14px}
 .idp-sz-row{display:flex;gap:8px;margin-bottom:16px}
-.idp-sz-btn{flex:1;border:2px solid var(--border);border-radius:12px;padding:12px 8px;cursor:pointer;background:var(--bg);text-align:center;transition:all .12s}
+.idp-sz-btn{flex:1;border:2px solid var(--border);border-radius:12px;padding:10px 8px;cursor:pointer;background:var(--bg);text-align:center;transition:all .12s}
 .idp-sz-btn.on{border-color:var(--accent);background:#fff8f0}
 .idp-sz-label{font-weight:800;font-size:16px}
-.idp-sz-price{font-size:12px;font-weight:600;color:var(--accent);margin-top:3px}
-.idp-qty-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.idp-sz-price{font-size:12px;font-weight:600;color:var(--accent);margin-top:2px}
+.idp-qty-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .idp-price{font-weight:900;font-size:22px;color:var(--accent)}
-/* ── Item Detail Mobile (bottom sheet) ── */
-#item-detail-mobile{display:none}
-@media(max-width:767px){
-  #item-detail-panel{display:none!important}
-  #item-detail-mobile{display:block;position:fixed;inset:0;z-index:450;visibility:hidden;pointer-events:none}
-  #item-detail-mobile.open{visibility:visible;pointer-events:auto}
-  #item-detail-mobile .ov-bg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .25s}
-  #item-detail-mobile.open .ov-bg{opacity:1}
-  #item-detail-mobile .sh-body{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.32,1,.55,1)}
-  #item-detail-mobile.open .sh-body{transform:translateY(0)}
-}
+
+/* ── Inventory page layout ── */
 #page-inventory{padding:0}
 .inv-page-body{position:absolute;top:47px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .inv-sub{display:none;padding:14px 14px 90px}
@@ -291,7 +275,7 @@ input[type=date]{font-size:14px!important}
 <div id="app">
   <div id="header">
     <div style="display:flex;align-items:center;gap:9px">
-      <img src="logo.png" style="width:36px;height:36px;flex-shrink:0;object-fit:contain" alt="Bemon Coffee"/>
+      <img src="logo.png" style="width:36px;height:36px;flex-shrink:0;object-fit:contain" alt="Bemon"/>
       <div>
         <div style="font-family:'Playfair Display',serif;font-size:17px;color:var(--brown);line-height:1">Bemon Coffee</div>
         <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">171 TRƯƠNG ĐỊNH</div>
@@ -339,31 +323,21 @@ input[type=date]{font-size:14px!important}
   </div>
 </div>
 
-<div id="toast"></div>
-
-<!-- ── ITEM DETAIL: DESKTOP SIDEBAR ── -->
-<aside id="item-detail-panel">
-  <div class="idp-header">
-    <div class="idp-title" id="idp-title">Chi tiết món</div>
-    <button class="idp-close" onclick="closeItemDetail()">✕</button>
-  </div>
-  <div class="idp-body" id="idp-body"></div>
-  <div class="idp-footer" id="idp-footer"></div>
-</aside>
-
 <!-- ── ITEM DETAIL: MOBILE BOTTOM SHEET ── -->
-<div id="item-detail-mobile">
-  <div class="ov-bg" onclick="closeItemDetail()"></div>
+<div id="ov-item-detail" class="overlay" style="z-index:450">
+  <div class="ov-bg" id="idm-bg"></div>
   <div class="sh-body">
     <div class="sh-handle"></div>
     <div class="sh-hdr">
       <div class="sh-title" id="idm-title">Chi tiết món</div>
-      <button class="sh-close" onclick="closeItemDetail()">✕</button>
+      <button class="sh-close" id="idm-close">✕</button>
     </div>
-    <div id="idm-body" style="flex:1;overflow-y:auto;padding:0 18px;-webkit-overflow-scrolling:touch"></div>
-    <div id="idm-footer" style="padding:14px 18px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+14px);border-top:1px solid var(--border-light);background:#fff;flex-shrink:0"></div>
+    <div id="idm-body" style="flex:1;overflow-y:auto;padding:0 18px 8px;-webkit-overflow-scrolling:touch"></div>
+    <div id="idm-footer" style="padding:12px 18px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+12px);border-top:1px solid #f0e8dc;background:#fff;flex-shrink:0"></div>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <!-- ── SHEETS ── -->
 <div class="overlay" id="ov-cart">
@@ -752,96 +726,78 @@ function buildMenuGrid(){
 function setSz(e,id,s){e.stopPropagation();S.sizes[id]=s;buildMenuGrid()}
 
 // ═══════════════════════════════════════
-//  ITEM DETAIL (mobile bottom sheet + desktop panel)
+//  ITEM DETAIL
 // ═══════════════════════════════════════
-let _detailId=null;
-let _detailQty=1;
+let _detailId=null,_detailQty=1;
 
 function openItemDetail(id){
   _detailId=id;_detailQty=1;
-  const isMobile=window.innerWidth<768;
-  if(isMobile){
-    _renderDetailContent('idm-body','idm-footer');
-    document.getElementById('idm-title').textContent=S.items.find(i=>i.id===id)?.n||'Chi tiết món';
-    document.getElementById('item-detail-mobile').classList.add('open');
-  } else {
-    _renderDetailContent('idp-body','idp-footer');
-    document.getElementById('item-detail-panel').classList.add('open');
-  }
+  _renderDetail();
+  document.getElementById('ov-item-detail').classList.add('on');
 }
-
 function closeItemDetail(){
-  const mob=document.getElementById('item-detail-mobile');
-  const pan=document.getElementById('item-detail-panel');
-  if(mob)mob.classList.remove('open');
-  if(pan)pan.classList.remove('open');
+  document.getElementById('ov-item-detail').classList.remove('on');
   _detailId=null;
 }
-
 function setDetailSz(s){
   if(!_detailId)return;
   S.sizes[_detailId]=s;
-  const isMobile=window.innerWidth<768;
-  _renderDetailContent(isMobile?'idm-body':'idp-body',isMobile?'idm-footer':'idp-footer');
-  buildMenuGrid();
+  _renderDetail();buildMenuGrid();
 }
-
 function chgDetailQty(d){
-  _detailQty=Math.max(1,_detailQty+d);
-  const isMobile=window.innerWidth<768;
-  _renderDetailContent(isMobile?'idm-body':'idp-body',isMobile?'idm-footer':'idp-footer');
+  _detailQty=Math.max(1,_detailQty+d);_renderDetail();
 }
-
 function addDetailToCart(){
   if(!_detailId)return;
   const item=S.items.find(i=>i.id===_detailId);if(!item)return;
-  const s=sz(item),p=pr(item),key=`${item.id}-${s}`;
+  const s=sz(item),p=pr(item),key=item.id+'-'+s;
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+_detailQty}:c);
   else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:_detailQty}];
   save();buildHeader();
-  toast(`✓ Đã thêm ${_detailQty} × ${item.n} (${s})`);
+  toast('✓ Đã thêm '+_detailQty+' × '+item.n+' ('+s+')');
   closeItemDetail();
 }
-
-function _renderDetailContent(bodyId,footerId){
-  const item=S.items.find(i=>i.id===_detailId);if(!item)return;
-  const s=sz(item),p=pr(item);
-  const hM=item.pM!=null,hL=item.pL!=null;
-  const catInfo=CATS[item.cat]||{icon:'☕',color:'#6F4E37'};
-  const cogs=s==='M'?(item.cM||0):(item.cL||0);
-  const margin=p-cogs;
-  const pct=p>0?Math.round(margin/p*100):0;
-  document.getElementById(bodyId).innerHTML=`
-    <div class="idp-icon">${catInfo.icon}</div>
-    <div class="idp-name">${item.n}</div>
-    <div class="idp-cat"><span style="background:${catInfo.color}18;color:${catInfo.color};border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">${catInfo.icon} ${item.cat}</span></div>
-    ${(hM&&hL)?`<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div>
-    <div class="idp-sz-row">
-      ${hM?`<div class="idp-sz-btn${s==='M'?' on':''}" onclick="setDetailSz('M')"><div class="idp-sz-label">M</div><div class="idp-sz-price">${fmt(item.pM)}</div></div>`:''}
-      ${hL?`<div class="idp-sz-btn${s==='L'?' on':''}" onclick="setDetailSz('L')"><div class="idp-sz-label">L</div><div class="idp-sz-price">${fmt(item.pL)}</div></div>`:''}
-    </div>`:''}
-    <div style="background:#faf7f3;border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-top:12px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-        <span style="color:var(--muted);font-weight:600">Giá bán</span>
-        <span style="font-weight:900;color:var(--accent)">${fmt(p)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:13px">
-        <span style="color:var(--muted);font-weight:600">Lợi nhuận</span>
-        <span style="font-weight:800;color:#16a34a">${fmt(margin)} <span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:5px;padding:1px 5px">${pct}%</span></span>
-      </div>
-    </div>`;
-  document.getElementById(footerId).innerHTML=`
-    <div class="idp-qty-row">
-      <span style="font-size:13px;font-weight:700;color:var(--muted)">Số lượng</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(-1)">−</button>
-        <span style="font-weight:900;font-size:18px;min-width:24px;text-align:center">${_detailQty}</span>
-        <button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(1)">+</button>
-      </div>
-      <div class="idp-price">${fmt(p*_detailQty)}</div>
-    </div>
-    <button class="btn btn-pr btn-full" onclick="addDetailToCart()" style="font-size:15px;padding:14px">🛒 Thêm vào giỏ</button>`;
+function _renderDetail(){
+  var item=S.items.find(function(i){return i.id===_detailId;});if(!item)return;
+  var s=sz(item),p=pr(item),hM=item.pM!=null,hL=item.pL!=null;
+  var ci=CATS[item.cat]||{icon:'☕',color:'#6F4E37'};
+  var cogs=s==='M'?(item.cM||0):(item.cL||0);
+  var margin=p-cogs,pct=p>0?Math.round(margin/p*100):0;
+  document.getElementById('idm-title').textContent=item.n;
+  var szHtml='';
+  if(hM&&hL){
+    szHtml='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Chọn size</div><div class="idp-sz-row">';
+    if(hM) szHtml+='<div class="idp-sz-btn'+(s==='M'?' on':'')+'" onclick="setDetailSz(\'M\')"><div class="idp-sz-label">M</div><div class="idp-sz-price">'+fmt(item.pM)+'</div></div>';
+    if(hL) szHtml+='<div class="idp-sz-btn'+(s==='L'?' on':'')+'" onclick="setDetailSz(\'L\')"><div class="idp-sz-label">L</div><div class="idp-sz-price">'+fmt(item.pL)+'</div></div>';
+    szHtml+='</div>';
+  }
+  document.getElementById('idm-body').innerHTML=
+    '<div class="idp-icon">'+ci.icon+'</div>'+
+    '<div class="idp-name">'+item.n+'</div>'+
+    '<div class="idp-cat"><span style="background:'+ci.color+'18;color:'+ci.color+';border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px">'+ci.icon+' '+item.cat+'</span></div>'+
+    szHtml+
+    '<div style="background:#faf7f3;border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-top:12px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">'+
+        '<span style="color:var(--muted);font-weight:600">Giá bán</span>'+
+        '<span style="font-weight:900;color:var(--accent)">'+fmt(p)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:13px">'+
+        '<span style="color:var(--muted);font-weight:600">Lợi nhuận</span>'+
+        '<span style="font-weight:800;color:#16a34a">'+fmt(margin)+' <span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:5px;padding:1px 5px">'+pct+'%</span></span>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('idm-footer').innerHTML=
+    '<div class="idp-qty-row">'+
+      '<span style="font-size:13px;font-weight:700;color:var(--muted)">Số lượng</span>'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(-1)">−</button>'+
+        '<span style="font-weight:900;font-size:18px;min-width:24px;text-align:center">'+_detailQty+'</span>'+
+        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="chgDetailQty(1)">+</button>'+
+      '</div>'+
+      '<div class="idp-price">'+fmt(p*_detailQty)+'</div>'+
+    '</div>'+
+    '<button class="btn btn-pr btn-full" onclick="addDetailToCart()" style="font-size:15px;padding:14px">🛒 Thêm vào giỏ</button>';
 }
 
 function addCart(id){
@@ -982,7 +938,19 @@ function buildInvSheet(){
   document.getElementById('inv-body').innerHTML=`
     <div style="padding:10px 20px 0">
       <div style="text-align:center;margin-bottom:14px;padding-top:4px">
-        <img src="logo.png" style="width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 8px" alt="Bemon Coffee"/>
+        <svg width="46" height="56" viewBox="0 0 200 220" fill="none" style="display:block;margin:0 auto 8px">
+    <g transform="rotate(15,100,110)">
+      <rect x="117" y="18" width="11" height="52" rx="4" fill="#3d1f0a" transform="rotate(12,122,44)"/>
+      <rect x="32" y="52" width="118" height="20" rx="8" fill="#3d1f0a"/>
+      <rect x="24" y="58" width="28" height="14" rx="5" fill="#3d1f0a"/>
+      <path d="M44 72 L148 72 L140 108 L52 108 Z" fill="#3d1f0a"/>
+      <rect x="30" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
+      <rect x="146" y="118" width="24" height="88" rx="4" fill="#3d1f0a"/>
+      <polygon points="30,118 54,118 105,168 81,168" fill="#3d1f0a"/>
+      <polygon points="146,118 170,118 119,168 95,168" fill="#3d1f0a"/>
+      <polygon points="81,168 119,168 119,206 81,206" fill="#3d1f0a"/>
+    </g>
+  </svg>
         <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);font-weight:700">BEMON COFFEE</div>
         <div style="font-size:11px;color:var(--sub);margin-top:2px">171 Trương Định, Tân Mai · 0941.615.912</div>
       </div>
@@ -1178,43 +1146,29 @@ function buildReport(){
       </div>`).join('')}
     </div>
 
-    <!-- Chart 1: Tổng doanh thu - Bar xanh -->
+    <!-- Chart 1: Tổng doanh thu -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-weight:800;font-size:13px;color:var(--text)">Tổng doanh thu</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biểu đồ thanh</div>
-        </div>
-        <span style="font-weight:900;font-size:14px;color:#6bb84d">${fK(tGross)}đ</span>
+        <div><div style="font-weight:800;font-size:13px">Tổng doanh thu</div><div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo giờ':'Theo ngày'} · Biểu đồ thanh</div></div>
+        <span style="font-weight:900;font-size:13px;color:#6bb84d">${fK(tGross)}đ</span>
       </div>
-      ${hasChart?`<div class="chart-wrap"><canvas id="rchart1"></canvas></div>`
-        :`<div class="empty" style="padding:20px 0"><div class="empty-ic">📊</div><div class="empty-tx">Không có dữ liệu</div></div>`}
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart1"></canvas></div>`:`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
     </div>
-
-    <!-- Chart 2: Doanh thu thuần - Area xanh -->
+    <!-- Chart 2: Doanh thu thuần -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-weight:800;font-size:13px;color:var(--text)">Doanh thu thuần</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biểu đồ khu vực</div>
-        </div>
-        <span style="font-weight:900;font-size:14px;color:#16a34a">${fK(tNet)}đ</span>
+        <div><div style="font-weight:800;font-size:13px">Doanh thu thuần</div><div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo giờ':'Theo ngày'} · Biểu đồ khu vực</div></div>
+        <span style="font-weight:900;font-size:13px;color:#16a34a">${fK(tNet)}đ</span>
       </div>
-      ${hasChart?`<div class="chart-wrap"><canvas id="rchart2"></canvas></div>`
-        :`<div class="empty" style="padding:20px 0"><div class="empty-ic">📈</div><div class="empty-tx">Không có dữ liệu</div></div>`}
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart2"></canvas></div>`:`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
     </div>
-
-    <!-- Chart 3: Lợi nhuận - Bar tím -->
+    <!-- Chart 3: Lợi nhuận -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-weight:800;font-size:13px;color:var(--text)">Lợi nhuận</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo khung giờ':'Theo ngày'} · Biên ${mg}%</div>
-        </div>
-        <span style="font-weight:900;font-size:14px;color:#7c3aed">${fK(tProfit)}đ</span>
+        <div><div style="font-weight:800;font-size:13px">Lợi nhuận</div><div style="font-size:11px;color:var(--sub);margin-top:2px">${isSingle?'Theo giờ':'Theo ngày'} · Biên ${mg}%</div></div>
+        <span style="font-weight:900;font-size:13px;color:#7c3aed">${fK(tProfit)}đ</span>
       </div>
-      ${hasChart?`<div class="chart-wrap"><canvas id="rchart3"></canvas></div>`
-        :`<div class="empty" style="padding:20px 0"><div class="empty-ic">💜</div><div class="empty-tx">Không có dữ liệu</div></div>`}
+      ${hasChart?`<div class="chart-wrap"><canvas id="rchart3"></canvas></div>`:`<div class="empty" style="padding:20px 0"><div class="empty-tx">Không có dữ liệu</div></div>`}
     </div>
 
     <!-- Payment breakdown -->
@@ -1266,67 +1220,17 @@ function buildReport(){
       </div>
     </div>`:''}`;
 
-  // ── Vẽ 3 biểu đồ riêng biệt ──
-  if(S.chart){
-    if(Array.isArray(S.chart))S.chart.forEach(c=>c&&c.destroy());
-    else S.chart.destroy();
-  }
+  // ── Vẽ 3 biểu đồ ──
+  if(S.chart){if(Array.isArray(S.chart))S.chart.forEach(c=>c&&c.destroy());else S.chart.destroy();}
   S.chart=[];
   if(hasChart){
-    const commonScales={
-      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:0}},
-      y:{grid:{color:'#f0eae0'},border:{dash:[3,3]},ticks:{font:{size:9},callback:v=>fK(v)},beginAtZero:true}
-    };
-
-    // Chart 1: Tổng doanh thu — Bar xanh lá
-    const ctx1=document.getElementById('rchart1');
-    if(ctx1){
-      const maxV=Math.max(...cNet);
-      S.chart.push(new Chart(ctx1,{type:'bar',
-        data:{labels:cLabels,datasets:[{
-          label:'Tổng doanh thu',data:cNet,
-          backgroundColor:cNet.map(v=>v===maxV?'#6cc04a':'#8ed16b'),
-          borderRadius:4,borderSkipped:false
-        }]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Doanh thu: '+fmt(c.raw)}}},
-          scales:commonScales}
-      }));
-    }
-
-    // Chart 2: Doanh thu thuần — Area line xanh lá
-    const ctx2=document.getElementById('rchart2');
-    if(ctx2){
-      S.chart.push(new Chart(ctx2,{type:'line',
-        data:{labels:cLabels,datasets:[{
-          label:'Doanh thu thuần',data:cNet,
-          borderColor:'#6cc04a',borderWidth:2.5,
-          backgroundColor:'rgba(108,192,74,0.12)',
-          fill:true,tension:0.35,
-          pointBackgroundColor:'#fff',pointBorderColor:'#6cc04a',
-          pointBorderWidth:2,pointRadius:4,pointHoverRadius:6
-        }]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Net: '+fmt(c.raw)}}},
-          scales:commonScales}
-      }));
-    }
-
-    // Chart 3: Lợi nhuận — Bar tím (đỏ nếu âm)
-    const ctx3=document.getElementById('rchart3');
-    if(ctx3){
-      const maxP=Math.max(...cProfit);
-      S.chart.push(new Chart(ctx3,{type:'bar',
-        data:{labels:cLabels,datasets:[{
-          label:'Lợi nhuận',data:cProfit,
-          backgroundColor:cProfit.map(v=>v<0?'#ef4444':v===maxP?'#7c3aed':'#a78bfa'),
-          borderRadius:4,borderSkipped:false
-        }]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Lợi nhuận: '+fmt(c.raw)}}},
-          scales:commonScales}
-      }));
-    }
+    const sc={x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{grid:{color:'#f0eae0'},border:{dash:[3,3]},ticks:{font:{size:9},callback:v=>fK(v)},beginAtZero:true}};
+    const c1=document.getElementById('rchart1');
+    if(c1){const mx=Math.max(...cNet);S.chart.push(new Chart(c1,{type:'bar',data:{labels:cLabels,datasets:[{label:'Doanh thu',data:cNet,backgroundColor:cNet.map(v=>v===mx?'#6cc04a':'#8ed16b'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Doanh thu: '+fmt(c.raw)}}},scales:sc}}));}
+    const c2=document.getElementById('rchart2');
+    if(c2){S.chart.push(new Chart(c2,{type:'line',data:{labels:cLabels,datasets:[{label:'Net',data:cNet,borderColor:'#6cc04a',borderWidth:2.5,backgroundColor:'rgba(108,192,74,0.12)',fill:true,tension:0.35,pointBackgroundColor:'#fff',pointBorderColor:'#6cc04a',pointBorderWidth:2,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Net: '+fmt(c.raw)}}},scales:sc}}));}
+    const c3=document.getElementById('rchart3');
+    if(c3){const mp=Math.max(...cProfit);S.chart.push(new Chart(c3,{type:'bar',data:{labels:cLabels,datasets:[{label:'Lợi nhuận',data:cProfit,backgroundColor:cProfit.map(v=>v<0?'#ef4444':v===mp?'#7c3aed':'#a78bfa'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:([c])=>c.label,label:c=>'Lợi nhuận: '+fmt(c.raw)}}},scales:sc}}));}
   }
 }
 function setRM(m){S.rMode=m;buildReport()}
