@@ -654,6 +654,7 @@ function closeOv(id){document.getElementById(id).classList.remove('on')}
 //  LOGIN
 // ═══════════════════════════════════════
 function togglePW(){const i=document.getElementById('lp');const b=document.getElementById('peye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁️':'🙈'}
+const SESSION_KEY='bemon_session_v1';
 function doLogin(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value;
@@ -663,6 +664,7 @@ function doLogin(){
   btn.disabled=true;btn.textContent='Đang xác thực...';
   setTimeout(()=>{
     if(u===CRED.u&&p===CRED.p){
+      try{localStorage.setItem(SESSION_KEY,'1');}catch(e){}
       document.getElementById('login-wrap').style.display='none';
       document.getElementById('app').style.display='flex';
       initApp();
@@ -674,6 +676,7 @@ function doLogin(){
   },600);
 }
 function doLogout(){
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
   document.getElementById('app').style.display='none';
   document.getElementById('login-wrap').style.display='flex';
   document.getElementById('lu').value='';
@@ -681,6 +684,16 @@ function doLogout(){
   document.getElementById('lerr').style.display='none';
   const btn=document.getElementById('lbtn');btn.disabled=false;btn.textContent='🔓 Đăng nhập';
 }
+// ── Auto-login nếu đã có session ──
+(function(){
+  try{
+    if(localStorage.getItem(SESSION_KEY)==='1'){
+      document.getElementById('login-wrap').style.display='none';
+      document.getElementById('app').style.display='flex';
+      initApp();
+    }
+  }catch(e){}
+})();
 document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lp').focus()});
 
