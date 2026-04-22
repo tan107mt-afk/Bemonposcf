@@ -7,6 +7,9 @@
 <link rel="icon" type="image/png" href="logo.png"/>
 <link rel="apple-touch-icon" href="logo.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Serif+Display&display=swap&display=swap" rel="stylesheet"/>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -452,6 +455,44 @@ input[type=date]{font-size:14px!important}
 
 <script>
 // ═══════════════════════════════════════
+//  FIREBASE — Cloud sync thực thời gian
+// ═══════════════════════════════════════
+const _FB_CFG={
+  apiKey:"AIzaSyBtSeBGNPOwKRYOt0VEAMx6VP4e_iuw2o",
+  authDomain:"bemon-coffee-pos.firebaseapp.com",
+  projectId:"bemon-coffee-pos",
+  storageBucket:"bemon-coffee-pos.firebasestorage.app",
+  messagingSenderId:"803940198449",
+  appId:"1:803940198449:web:3f7ecd204c3778999acd10"
+};
+if(!firebase.apps.length)firebase.initializeApp(_FB_CFG);
+const _DB=firebase.firestore();
+const _COL="bemon_pos_data",_DOC="store_v1";
+let _fbUnsub=null,_fbLastWrite=0,_fbWriteTimer=null;
+
+// Ghi lên cloud (debounce 1.5s)
+function fbSave(payload){
+  clearTimeout(_fbWriteTimer);
+  _fbWriteTimer=setTimeout(function(){
+    _fbLastWrite=Date.now();
+    payload._ts=_fbLastWrite;
+    _DB.collection(_COL).doc(_DOC).set(payload)
+      .then(function(){console.log("☁️ Đã sync cloud");})
+      .catch(function(e){console.warn("⚠️ Lỗi cloud:",e);});
+  },1500);
+}
+
+// Lắng nghe realtime
+function fbListen(cb){
+  if(_fbUnsub)_fbUnsub();
+  _fbUnsub=_DB.collection(_COL).doc(_DOC)
+    .onSnapshot(function(snap){
+      if(Date.now()-_fbLastWrite<2500)return;// bỏ qua echo
+      if(snap.exists){var d=snap.data();if(d&&d._ts)cb(d);}
+    },function(e){console.warn("Listen err:",e);});
+}
+
+// ═══════════════════════════════════════
 //  CONSTANTS
 // ═══════════════════════════════════════
 const CRED={u:'bemoncoffee0509',p:'Bemon0509.'};
@@ -596,6 +637,7 @@ function saveDB(){
       _ver:     3,
     };
     localStorage.setItem(DB_KEY, JSON.stringify(data));
+    fbSave(data); // sync cloud
   }catch(e){console.warn('Lỗi lưu dữ liệu:',e);}
 }
 
@@ -703,8 +745,17 @@ setInterval(()=>{if(document.getElementById('app').style.display!=='none')saveDB
 // ═══════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════
+function _applyCloudData(d){
+  if(d.orders    &&Array.isArray(d.orders))    S.orders    =d.orders.filter(within30);
+  if(d.purchases &&Array.isArray(d.purchases)) S.purchases =d.purchases;
+  if(d.voids     &&Array.isArray(d.voids))     S.voids     =d.voids;
+  if(d.cart      &&Array.isArray(d.cart))      S.cart      =d.cart;
+  if(d.pm) S.pm=d.pm;
+  try{localStorage.setItem(DB_KEY,JSON.stringify(Object.assign({},d,{_ver:3})));}catch(e){}
+}
+
 function initApp(){
-  // Load saved data first
+  // Bước 1: localStorage trước — hiển thị ngay
   const restored=loadDB();
   // Clean expired orders (>30 days)
   S.orders=S.orders.filter(within30);
@@ -719,10 +770,46 @@ function initApp(){
   // Wire static overlay backgrounds
   var _ovinvbg=document.getElementById('ov-inv-bg');
   if(_ovinvbg)_ovinvbg.addEventListener('click',function(){closeOv('ov-inv');});
-  if(restored && S.orders.length>0){
-    // Show subtle indicator
-    setTimeout(()=>toast(`✅ Đã khôi phục ${S.orders.length} hoá đơn & dữ liệu`),400);
-  }
+  // Bước 2: Load cloud (có thể mới hơn localStorage)
+  _DB.collection(_COL).doc(_DOC).get().then(function(snap){
+    if(snap.exists){
+      var d=snap.data();
+      var localTs=0;
+      try{var lr=localStorage.getItem(DB_KEY);if(lr)localTs=(JSON.parse(lr)._saved||0);}catch(ex){}
+      if(d&&d._saved&&d._saved>localTs){
+        _applyCloudData(d);
+        buildHeader();buildMenuGrid();
+        if(S.tab==='report')buildReport();
+        if(S.tab==='invoices')buildInvoices();
+        toast('☁️ Đã đồng bộ từ cloud');
+      }else if(restored&&S.orders.length>0){
+        setTimeout(function(){toast('✅ Đã khôi phục '+S.orders.length+' hoá đơn');},400);
+      }
+    }else if(restored&&S.orders.length>0){
+      setTimeout(function(){toast('✅ Đã khôi phục '+S.orders.length+' hoá đơn');},400);
+    }
+    // Bước 3: Lắng nghe realtime — cập nhật khi thiết bị khác ghi
+    fbListen(function(d){
+      _applyCloudData(d);
+      buildHeader();buildMenuGrid();
+      if(S.tab==='report')buildReport();
+      if(S.tab==='invoices')buildInvoices();
+      if(S.tab==='inventory')buildInventory();
+      var cartOv=document.getElementById('ov-cart');
+      if(cartOv&&cartOv.classList.contains('on'))buildCartBody();
+    });
+  }).catch(function(e){
+    console.warn('Cloud load failed, dùng localStorage:',e);
+    if(restored&&S.orders.length>0)
+      setTimeout(function(){toast('✅ Đã khôi phục '+S.orders.length+' hoá đơn');},400);
+    // Vẫn lắng nghe realtime dù load lần đầu thất bại
+    fbListen(function(d){
+      _applyCloudData(d);
+      buildHeader();buildMenuGrid();
+      if(S.tab==='report')buildReport();
+      if(S.tab==='invoices')buildInvoices();
+    });
+  });
 }
 
 // ═══════════════════════════════════════
