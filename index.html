@@ -405,7 +405,7 @@ input[type=date]{font-size:14px!important}
 </div>
 
 <div class="overlay" id="ov-inv">
-  <div class="ov-bg" onclick="closeOv('ov-inv')"></div>
+  <div class="ov-bg" id="ov-inv-bg"></div>
   <div class="sh-body" style="max-height:93dvh;overflow:hidden;display:flex;flex-direction:column">
     <div class="sh-handle"></div>
     <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0" id="inv-body"></div>
@@ -433,19 +433,19 @@ input[type=date]{font-size:14px!important}
 </div>
 
 <div class="overlay fm" id="ov-purch-form">
-  <div class="ov-bg" onclick="closeOv('ov-purch-form')"></div>
+  <div class="ov-bg" id="purch-cancel-btn"></div>
   <div class="sh-body">
     <div class="sh-handle"></div>
-    <div class="sh-hdr"><div class="sh-title">🚚 Tạo phiếu nhập hàng</div><button class="sh-close" onclick="closeOv('ov-purch-form')">✕</button></div>
+    <div class="sh-hdr"><div class="sh-title">🚚 Tạo phiếu nhập hàng</div><button class="sh-close" id="purch-cancel-btn">✕</button></div>
     <div class="sh-content" id="purch-form-body"></div>
   </div>
 </div>
 
 <div class="overlay fm" id="ov-void-form">
-  <div class="ov-bg" onclick="closeOv('ov-void-form')"></div>
+  <div class="ov-bg" id="void-cancel-btn"></div>
   <div class="sh-body">
     <div class="sh-handle"></div>
-    <div class="sh-hdr"><div class="sh-title">🗑️ Tạo phiếu huỷ hàng</div><button class="sh-close" onclick="closeOv('ov-void-form')">✕</button></div>
+    <div class="sh-hdr"><div class="sh-title">🗑️ Tạo phiếu huỷ hàng</div><button class="sh-close" id="void-cancel-btn">✕</button></div>
     <div class="sh-content" id="void-form-body"></div>
   </div>
 </div>
@@ -703,6 +703,9 @@ function initApp(){
   var _cl=document.getElementById('idm-close');
   if(_bg)_bg.addEventListener('click',closeItemDetail);
   if(_cl)_cl.addEventListener('click',closeItemDetail);
+  // Wire static overlay backgrounds
+  var _ovinvbg=document.getElementById('ov-inv-bg');
+  if(_ovinvbg)_ovinvbg.addEventListener('click',function(){closeOv('ov-inv');});
   if(restored && S.orders.length>0){
     // Show subtle indicator
     setTimeout(()=>toast(`✅ Đã khôi phục ${S.orders.length} hoá đơn & dữ liệu`),400);
@@ -775,7 +778,8 @@ function _catSvgSmall(cat){
 function buildCatChips(){
   const el=document.getElementById('cat-chips');
   const cats=['Tất cả',...Object.keys(CATS)];
-  el.innerHTML=cats.map(c=>`<button class="chip${S.selCat===c?' on':''}" onclick="selCat('${c}')">${_catSvgSmall(c)} ${c}</button>`).join('');
+  el.innerHTML=cats.map(c=>`<button class="chip${S.selCat===c?' on':''}" data-cat="${c}">${_catSvgSmall(c)} ${c}</button>`).join('');
+  el.onclick=function(e){var btn=e.target.closest('[data-cat]');if(btn)selCat(btn.dataset.cat);};
 }
 function selCat(c){S.selCat=c;buildCatChips();buildMenuGrid()}
 
@@ -784,22 +788,32 @@ function buildMenuGrid(){
   const list=S.selCat==='Tất cả'?S.items:S.items.filter(m=>m.cat===S.selCat);
   el.innerHTML=list.map(item=>{
     const s=sz(item),hM=item.pM!=null,hL=item.pL!=null,p=pr(item);
-    return`<div class="mi" onclick="openItemDetail(${item.id})">
+    return`<div class="mi" data-id="${item.id}">
       <div class="mi-icon" style="background:${CATS[item.cat]?.color||'#6F4E37'}14">${_catSvgSmall(item.cat)}</div>
       <div class="mi-name">${item.n}</div>
       <div class="mi-cat">${item.cat}</div>
       <div class="sz-row">
-        ${hM?`<button class="sz-btn${s==='M'?' on':''}" onclick="setSz(event,${item.id},'M')">M<br><span style="font-size:9px;font-weight:600">${fK(item.pM)}</span></button>`:''}
-        ${hL?`<button class="sz-btn${s==='L'?' on':''}" onclick="setSz(event,${item.id},'L')">L<br><span style="font-size:9px;font-weight:600">${fK(item.pL)}</span></button>`:''}
+        ${hM?`<button class="sz-btn${s==='M'?' on':''}" data-sz="M" data-id="${item.id}">M<br><span style="font-size:9px;font-weight:600">${fK(item.pM)}</span></button>`:''}
+        ${hL?`<button class="sz-btn${s==='L'?' on':''}" data-sz="L" data-id="${item.id}">L<br><span style="font-size:9px;font-weight:600">${fK(item.pL)}</span></button>`:''}
       </div>
       <div class="mi-foot">
         <span class="mi-price">${fmt(p)}</span>
-        <button class="add-btn" onclick="addCart(${item.id});event.stopPropagation()">+</button>
+        <button class="add-btn" data-add="${item.id}" aria-label="Thêm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       </div>
     </div>`;
   }).join('');
+  // Event delegation — CSP safe, no inline onclick
+  el.onclick=function(e){
+    const addBtn=e.target.closest('[data-add]');
+    if(addBtn){e.stopPropagation();addCart(+addBtn.dataset.add);return;}
+    const szBtn=e.target.closest('[data-sz]');
+    if(szBtn){e.stopPropagation();S.sizes[+szBtn.dataset.id]=szBtn.dataset.sz;buildMenuGrid();return;}
+    const card=e.target.closest('[data-id]');
+    if(card&&card.classList.contains('mi')){openItemDetail(+card.dataset.id);}
+  };
 }
-function setSz(e,id,s){e.stopPropagation();S.sizes[id]=s;buildMenuGrid()}
 
 // ── ITEM DETAIL ──
 let _detailId=null,_detailQty=1;
@@ -814,7 +828,7 @@ function addDetailToCart(){
   var ex=S.cart.find(function(c){return c.key===key;});
   if(ex)S.cart=S.cart.map(function(c){return c.key===key?Object.assign({},c,{qty:c.qty+_detailQty}):c;});
   else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key:key,size:s,price:p,qty:_detailQty}];
-  save();buildHeader();
+  save();buildHeader();buildMenuGrid();
   toast('✓ Đã thêm '+_detailQty+' × '+item.n+' ('+s+')');
   closeItemDetail();
 }
@@ -827,17 +841,52 @@ function _renderDetail(){
   document.getElementById('idm-title').textContent=item.n;
   document.getElementById('idm-icon').textContent=ci.icon;
   document.getElementById('idm-badge').innerHTML='<span class="id-cat-badge" style="background:'+ci.color+'18;color:'+ci.color+'">'+ci.icon+' '+item.cat+'</span>';
+
+  // Size buttons
   var szHtml='';
   if(hM||hL){
-    szHtml='<div class="id-sz-label">Chọn size</div><div class="id-sz-row">';
-    if(hM)szHtml+='<button class="id-sz-btn'+(s==='M'?' on':'')+'" data-s="M" onclick="setDetailSz(this.dataset.s)"><div class="id-sz-top"><div class="id-sz-name">M</div></div><div class="id-sz-bottom"><div class="id-sz-price">'+fmt(item.pM)+'</div><div class="id-sz-note">Size vừa</div></div></button>';
-    if(hL)szHtml+='<button class="id-sz-btn'+(s==='L'?' on':'')+'" data-s="L" onclick="setDetailSz(this.dataset.s)"><div class="id-sz-top"><div class="id-sz-name">L</div></div><div class="id-sz-bottom"><div class="id-sz-price">'+fmt(item.pL)+'</div><div class="id-sz-note">Size lớn</div></div></button>';
+    szHtml='<div class="id-sz-label">Chọn size</div><div class="id-sz-row" id="idm-sz-row">';
+    if(hM)szHtml+='<button class="id-sz-btn'+(s==='M'?' on':'')+'" id="idm-sz-M"><div class="id-sz-top"><div class="id-sz-name">M</div></div><div class="id-sz-bottom"><div class="id-sz-price">'+fmt(item.pM)+'</div><div class="id-sz-note">Size vừa</div></div></button>';
+    if(hL)szHtml+='<button class="id-sz-btn'+(s==='L'?' on':'')+'" id="idm-sz-L"><div class="id-sz-top"><div class="id-sz-name">L</div></div><div class="id-sz-bottom"><div class="id-sz-price">'+fmt(item.pL)+'</div><div class="id-sz-note">Size lớn</div></div></button>';
     szHtml+='</div>';
   }
   var pctBg=pct>=60?'#dcfce7':pct>=40?'#fef9c3':'#fee2e2';
   var pctCol=pct>=60?'#16a34a':pct>=40?'#92400e':'#dc2626';
-  document.getElementById('idm-body').innerHTML=szHtml+'<div class="id-info"><div class="id-info-row"><span class="id-info-label">💵 Giá bán</span><span class="id-info-val" style="color:var(--accent)">'+fmt(p)+'</span></div>'+(cogs>0?'<div class="id-info-row"><span class="id-info-label">📦 COGS</span><span class="id-info-val" style="color:#f59e0b">'+fmt(cogs)+'</span></div><div class="id-info-row"><span class="id-info-label">💰 Lợi nhuận</span><span class="id-info-val" style="color:#16a34a">'+fmt(margin)+' <span style="background:'+pctBg+';color:'+pctCol+';border-radius:6px;padding:2px 7px;font-size:11px">'+pct+'%</span></span></div>':'')+'</div>';
-  document.getElementById('idm-footer').innerHTML='<div class="id-qty-row"><span class="id-qty-label">Số lượng</span><div class="id-qty-ctrl"><button class="id-qty-btn" onclick="chgDetailQty(-1)">−</button><span class="id-qty-num">'+_detailQty+'</span><button class="id-qty-btn" onclick="chgDetailQty(1)">+</button></div><span class="id-total">'+fmt(p*_detailQty)+'</span></div><button class="id-add-btn" onclick="addDetailToCart()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>Thêm vào giỏ · '+fmt(p*_detailQty)+'</button>';
+  document.getElementById('idm-body').innerHTML=
+    szHtml+
+    '<div class="id-info">'+
+      '<div class="id-info-row"><span class="id-info-label">💵 Giá bán</span><span class="id-info-val" style="color:var(--accent)">'+fmt(p)+'</span></div>'+
+      (cogs>0?
+        '<div class="id-info-row"><span class="id-info-label">📦 COGS</span><span class="id-info-val" style="color:#f59e0b">'+fmt(cogs)+'</span></div>'+
+        '<div class="id-info-row"><span class="id-info-label">💰 Lợi nhuận</span><span class="id-info-val" style="color:#16a34a">'+fmt(margin)+
+          ' <span style="background:'+pctBg+';color:'+pctCol+';border-radius:6px;padding:2px 7px;font-size:11px">'+pct+'%</span></span></div>'
+        :'')+
+    '</div>';
+
+  // Qty + Add button
+  document.getElementById('idm-footer').innerHTML=
+    '<div class="id-qty-row">'+
+      '<span class="id-qty-label">Số lượng</span>'+
+      '<div class="id-qty-ctrl">'+
+        '<button class="id-qty-btn" id="idm-qty-minus">−</button>'+
+        '<span class="id-qty-num" id="idm-qty-num">'+_detailQty+'</span>'+
+        '<button class="id-qty-btn" id="idm-qty-plus">+</button>'+
+      '</div>'+
+      '<span class="id-total" id="idm-total">'+fmt(p*_detailQty)+'</span>'+
+    '</div>'+
+    '<button class="id-add-btn" id="idm-add-btn">'+
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>'+
+      'Thêm vào giỏ · '+fmt(p*_detailQty)+
+    '</button>';
+
+  // ── Wire events via addEventListener (CSP-safe, no inline onclick) ──
+  var btnM=document.getElementById('idm-sz-M');
+  var btnL=document.getElementById('idm-sz-L');
+  if(btnM) btnM.addEventListener('click',function(){setDetailSz('M');});
+  if(btnL) btnL.addEventListener('click',function(){setDetailSz('L');});
+  document.getElementById('idm-qty-minus').addEventListener('click',function(){chgDetailQty(-1);});
+  document.getElementById('idm-qty-plus').addEventListener('click',function(){chgDetailQty(1);});
+  document.getElementById('idm-add-btn').addEventListener('click',addDetailToCart);
 }
 
 function addCart(id){
@@ -846,7 +895,7 @@ function addCart(id){
   const ex=S.cart.find(c=>c.key===key);
   if(ex)S.cart=S.cart.map(c=>c.key===key?{...c,qty:c.qty+1}:c);
   else S.cart=[...S.cart,{id:item.id,n:item.n,cat:item.cat,key,size:s,price:p,qty:1}];
-  save();buildHeader();
+  save();buildHeader();buildMenuGrid();
 }
 function chgQty(key,d){
   S.cart=S.cart.map(c=>c.key===key?{...c,qty:Math.max(0,c.qty+d)}:c).filter(c=>c.qty>0);
@@ -863,30 +912,41 @@ function buildCartBody(){
   document.getElementById('cart-title').textContent=`🛒 Giỏ hàng${cnt>0?' ('+cnt+')':''}`;
   const el=document.getElementById('cart-body');
   if(!S.cart.length){el.innerHTML=`<div class="empty"><div class="empty-ic">🫙</div><div class="empty-tx">Chưa có món nào</div></div>`;return}
-  el.innerHTML=S.cart.map(c=>`
-    <div class="ci">
-      <span style="font-size:18px;flex-shrink:0">${CATS[c.cat]?.icon||'☕'}</span>
+  const cartHtml=S.cart.map(c=>`
+    <div class="ci" data-key="${c.key}">
+      <div class="ci-icon">${_catSvgSmall(c.cat)}</div>
       <div style="flex:1;min-width:0">
         <div class="ci-name">${c.n}</div>
-        <div style="display:flex;gap:5px;align-items:center;margin-top:2px">
+        <div style="display:flex;gap:5px;align-items:center;margin-top:3px">
           <span class="sz-badge">${c.size}</span>
           <span class="ci-price">${fmt(c.price)}</span>
         </div>
       </div>
       <div class="qrow">
-        <button class="qbtn" onclick="chgQty('${c.key}',-1)">−</button>
-        <span style="font-weight:900;width:20px;text-align:center;font-size:14px">${c.qty}</span>
-        <button class="qbtn" onclick="chgQty('${c.key}',1)">+</button>
+        <button class="qbtn" data-qkey="${c.key}" data-qd="-1">−</button>
+        <span style="font-weight:800;width:22px;text-align:center;font-size:15px">${c.qty}</span>
+        <button class="qbtn" data-qkey="${c.key}" data-qd="1">+</button>
       </div>
-    </div>`).join('')+`
-  <div style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--border)">
+    </div>`).join('');
+  const footHtml=`
+  <div id="cart-foot" style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--border)">
     <div style="display:flex;justify-content:space-between;margin-bottom:16px">
       <span style="font-weight:800;font-size:15px">Tổng cộng</span>
       <span style="font-weight:900;font-size:20px;color:var(--accent)">${fmt(tot)}</span>
     </div>
-    <button class="btn btn-pr btn-full" onclick="closeOv('ov-cart');setTimeout(openPay,220)">💳 Thanh toán · ${fmt(tot)}</button>
-    <button class="btn btn-gh btn-full" style="margin-top:8px" onclick="clearCart()">Xóa tất cả</button>
+    <button class="btn btn-pr btn-full" id="cart-pay-btn">💳 Thanh toán · ${fmt(tot)}</button>
+    <button class="btn btn-gh btn-full" style="margin-top:8px" id="cart-clear-btn">Xóa tất cả</button>
   </div>`;
+  el.innerHTML=cartHtml+footHtml;
+  // Event delegation — CSP safe
+  el.onclick=function(e){
+    const qBtn=e.target.closest('[data-qkey]');
+    if(qBtn){chgQty(qBtn.dataset.qkey,+qBtn.dataset.qd);return;}
+  };
+  const payBtn=document.getElementById('cart-pay-btn');
+  const clrBtn=document.getElementById('cart-clear-btn');
+  if(payBtn)payBtn.addEventListener('click',function(){closeOv('ov-cart');setTimeout(openPay,220);});
+  if(clrBtn)clrBtn.addEventListener('click',clearCart);
 }
 
 // ═══════════════════════════════════════
@@ -901,7 +961,7 @@ function buildPayBody(){
       <span style="color:var(--accent);font-weight:800;margin-left:8px">${fmt(c.price*c.qty)}</span>
     </div>`).join('');
   const pCards=PMS.map(p=>`
-    <button class="pc${S.pm===p.id?' selected':''}" onclick="setPM('${p.id}')"
+    <button class="pc${S.pm===p.id?' selected':''}" data-pm="${p.id}"
       style="${S.pm===p.id?`border-color:${p.c};background:${p.c}18;border-width:2px`:''}">
       <span class="pc-icon">${p.ic}</span>
       <div>
@@ -909,7 +969,8 @@ function buildPayBody(){
         ${S.pm===p.id?`<div class="pc-check" style="color:${p.c}">✓ Đã chọn</div>`:''}
       </div>
     </button>`).join('');
-  document.getElementById('pay-body').innerHTML=`
+  const payBody=document.getElementById('pay-body');
+  payBody.innerHTML=`
     <div style="background:#faf7f3;border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid #ede5d8">
       ${rows}
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;justify-content:space-between">
@@ -918,11 +979,18 @@ function buildPayBody(){
       </div>
     </div>
     <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">Hình thức thanh toán</div>
-    <div class="pay-grid">${pCards}</div>
+    <div class="pay-grid" id="pay-grid">${pCards}</div>
     <div class="btn-row">
-      <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-pay')">Hủy</button>
-      <button class="btn btn-pr" style="flex:2" onclick="doCheckout()">✓ Thanh toán</button>
+      <button class="btn btn-gh" style="flex:1" id="pay-cancel-btn">Hủy</button>
+      <button class="btn btn-pr" style="flex:2" id="pay-confirm-btn">✓ Thanh toán</button>
     </div>`;
+  // Wire events — CSP safe
+  document.getElementById('pay-grid').addEventListener('click',function(e){
+    const btn=e.target.closest('[data-pm]');
+    if(btn){S.pm=btn.dataset.pm;buildPayBody();}
+  });
+  document.getElementById('pay-cancel-btn').addEventListener('click',function(){closeOv('ov-pay');});
+  document.getElementById('pay-confirm-btn').addEventListener('click',doCheckout);
 }
 function setPM(id){S.pm=id;buildPayBody()}
 
@@ -961,6 +1029,13 @@ function showInv(order){
   S.curInv=order;
   buildInvSheet();
   openOv('ov-inv');
+}
+function _wireInvoiceBtns(){
+  document.querySelectorAll('[data-inv-id]').forEach(function(b){
+    b.addEventListener('click',function(){showInvById(+b.dataset.invId);});
+  });
+  var rst=document.getElementById('inv-filter-reset');
+  if(rst)rst.addEventListener('click',function(){S.ifDate='';S.ifPay='all';buildInvoices();});
 }
 function showInvById(id){
   const o=liveOrders().find(x=>x.id===id);
@@ -1010,9 +1085,12 @@ function buildInvSheet(){
       </div>
       <div style="text-align:center;margin-bottom:18px;font-size:13px;color:var(--muted)">🙏 Cảm ơn quý khách! Hẹn gặp lại ☕</div>
     </div>`;
-  document.getElementById('inv-foot').innerHTML=`
-    <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-inv')">Đóng</button>
-    <button class="btn btn-pr" style="flex:2" onclick="doPrint()">🖨️ In hoá đơn</button>`;
+  const invFoot=document.getElementById('inv-foot');
+  invFoot.innerHTML=`
+    <button class="btn btn-gh" style="flex:1" id="inv-close-btn">Đóng</button>
+    <button class="btn btn-pr" style="flex:2" id="inv-print-btn">🖨️ In hoá đơn</button>`;
+  document.getElementById('inv-close-btn').addEventListener('click',function(){closeOv('ov-inv');});
+  document.getElementById('inv-print-btn').addEventListener('click',doPrint);
 }
 function doPrint(){
   const o=S.curInv;if(!o)return;
@@ -1100,10 +1178,10 @@ function buildReport(){
 
   // Controls HTML
   const modeH=`<div class="mode-toggle">
-    ${[['range','📅 Nhanh'],['custom','🗓️ Tuỳ chọn']].map(([m,lb])=>`<button class="mt-btn${S.rMode===m?' on':''}" onclick="setRM('${m}')">${lb}</button>`).join('')}
+    ${[['range','📅 Nhanh'],['custom','🗓️ Tuỳ chọn']].map(([m,lb])=>`<button class="mt-btn${S.rMode===m?' on':''}" data-rm="${m}">${lb}</button>`).join('')}
   </div>`;
   const rangeH=S.rMode==='range'
-    ?`<div class="rng-row">${[1,7,14,30].map(n=>`<button class="rng-btn${S.rRange===n?' on':''}" onclick="setRR(${n})">${n===1?'Hôm nay':n+'N'}</button>`).join('')}</div>`
+    ?`<div class="rng-row">${[1,7,14,30].map(n=>`<button class="rng-btn${S.rRange===n?' on':''}" data-rr="${n}">${n===1?'Hôm nay':n+'N'}</button>`).join('')}</div>`
     :`<div class="form-row">
         <div><div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">Từ ngày</div>
           <input type="date" value="${S.rFrom}" max="${S.rTo}" onchange="S.rFrom=this.value;buildReport()" style="width:100%;background:#faf7f3;border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font-size:14px;color:var(--text);outline:none"></div>
@@ -1159,7 +1237,7 @@ function buildReport(){
         <div class="rpt-sub">Bemon Coffee · <b style="color:var(--accent)">${rlbl}</b></div>
       </div>
       <div class="rpt-controls">
-        <div class="mode-toggle" style="margin-bottom:0">${[['range','📅 Nhanh'],['custom','🗓️ Tuỳ chọn']].map(([m,lb])=>`<button class="mt-btn${S.rMode===m?' on':''}" onclick="setRM('${m}')">${lb}</button>`).join('')}</div>
+        <div class="mode-toggle" style="margin-bottom:0">${[['range','📅 Nhanh'],['custom','🗓️ Tuỳ chọn']].map(([m,lb])=>`<button class="mt-btn${S.rMode===m?' on':''}" data-rm="${m}">${lb}</button>`).join('')}</div>
       </div>
     </div>
 
@@ -1251,6 +1329,7 @@ function buildReport(){
 
   // ── Vẽ 3 biểu đồ ──
   if(S.chart){if(Array.isArray(S.chart))S.chart.forEach(c=>c&&c.destroy());else S.chart.destroy();}
+  _wireReportBtns();
   S.chart=[];
   if(hasChart){
     const sc={
@@ -1267,6 +1346,15 @@ function buildReport(){
 }
 function setRM(m){S.rMode=m;buildReport()}
 function setRR(n){S.rRange=n;buildReport()}
+function _wireReportBtns(){
+  // Wire report mode/range buttons after render
+  document.querySelectorAll('[data-rm]').forEach(function(b){
+    b.addEventListener('click',function(){setRM(b.dataset.rm);});
+  });
+  document.querySelectorAll('[data-rr]').forEach(function(b){
+    b.addEventListener('click',function(){setRR(+b.dataset.rr);});
+  });
+}
 
 // ═══════════════════════════════════════
 //  PRODUCTS page — Top 3 podium + full table
@@ -1383,7 +1471,7 @@ function buildInvoices(){
           </select>
         </div>
       </div>
-      ${(S.ifDate||S.ifPay!=='all')?`<button onclick="S.ifDate='';S.ifPay='all';buildInvoices()" style="font-size:12px;color:var(--accent);font-weight:700;background:none;border:none;cursor:pointer">✕ Xoá bộ lọc</button>`:''}
+      ${(S.ifDate||S.ifPay!=='all')?`<button id="inv-filter-reset" style="font-size:12px;color:var(--accent);font-weight:700;background:none;border:none;cursor:pointer">✕ Xoá bộ lọc</button>`:''}
       <div class="grid3" style="margin-top:10px;margin-bottom:0">
         <div style="background:#fff8f0;border-radius:10px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--sub)">Số HĐ</div><div style="font-weight:900;font-size:15px;color:var(--accent)">${fi.length}</div></div>
         <div style="background:#f0faf4;border-radius:10px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--sub)">Tổng</div><div style="font-weight:900;font-size:14px;color:#16a34a">${fK(tot)}đ</div></div>
@@ -1407,9 +1495,10 @@ function buildInvoices(){
         <div class="item-tags">
           ${o.items.map(it=>`<span class="itag">${CATS[it.cat]?.icon||''} ${it.n} <b>${it.size}</b>×${it.qty}</span>`).join('')}
         </div>
-        <button class="btn btn-pr btn-full" onclick="showInvById(${o.id})" style="font-size:13px;padding:10px">🧾 Xem & In hoá đơn</button>
+        <button class="btn btn-pr btn-full" data-inv-id="${o.id}" style="font-size:13px;padding:10px">🧾 Xem & In hoá đơn</button>
       </div>`;
     }).join('')}`;
+  _wireInvoiceBtns();
 }
 
 // CSV export
@@ -1458,8 +1547,8 @@ function buildItemsTab(){
           <span style="background:${CATS[item.cat]?.color||'#888'}20;color:${CATS[item.cat]?.color||'#888'};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">${item.cat}</span>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn-sm-edit" onclick="openItemEdit(${item.id})">✏️</button>
-          <button class="btn-sm-del" onclick="delItem(${item.id})">🗑</button>
+          <button class="btn-sm-edit" data-item-edit="${item.id}">✏️</button>
+          <button class="btn-sm-del" data-item-del="${item.id}">🗑</button>
         </div>
       </div>
       <div class="mc4">
@@ -1471,6 +1560,14 @@ function buildItemsTab(){
       </div>`:''}
     </div>`;
   }).join('');
+}
+function _wireItemBtns(){
+  document.querySelectorAll('[data-item-edit]').forEach(function(b){
+    b.addEventListener('click',function(){openItemEdit(+b.dataset.itemEdit);});
+  });
+  document.querySelectorAll('[data-item-del]').forEach(function(b){
+    b.addEventListener('click',function(){delItem(+b.dataset.itemDel);});
+  });
 }
 function delItem(id){S.items=S.items.filter(i=>i.id!==id);save();buildItemsTab();buildMenuGrid()}
 function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:''});openOv('ov-item-form')}
@@ -1490,8 +1587,8 @@ function renderItemForm(f){
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-item-form')">Hủy</button>
-      <button class="btn btn-pr" style="flex:2" onclick="saveItem()">💾 Lưu</button>
+      <button class="btn btn-gh" style="flex:1" id="item-cancel-btn">Hủy</button>
+      <button class="btn btn-pr" style="flex:2" id="item-save-btn">💾 Lưu</button>
     </div>`;
 }
 function saveItem(){
@@ -1526,8 +1623,8 @@ function buildIngsTab(){
           ${g.note?`<div style="font-size:10px;color:var(--sub);margin-top:2px">📝 ${g.note}</div>`:''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
-          <button class="btn-sm-edit" onclick="openIngEdit('${g.id}')">✏️</button>
-          <button class="btn-sm-del" onclick="delIng('${g.id}')">🗑</button>
+          <button class="btn-sm-edit" data-ing-edit="${g.id}">✏️</button>
+          <button class="btn-sm-del" data-ing-del="${g.id}">🗑</button>
         </div>
       </div>
       <div class="mc3">
@@ -1537,6 +1634,14 @@ function buildIngsTab(){
       </div>
     </div>`;
   }).join('');
+}
+function _wireIngBtns(){
+  document.querySelectorAll('[data-ing-edit]').forEach(function(b){
+    b.addEventListener('click',function(){openIngEdit(b.dataset.ingEdit);});
+  });
+  document.querySelectorAll('[data-ing-del]').forEach(function(b){
+    b.addEventListener('click',function(){delIng(b.dataset.ingDel);});
+  });
 }
 function delIng(id){S.ings=S.ings.filter(g=>g.id!==id);save();buildIngsTab()}
 function openIngForm(){S.ingEditId=null;document.getElementById('ing-form-title').textContent='➕ Thêm nguyên liệu';renderIngForm({n:'',u:'gram',cp:'',st:'',note:''});openOv('ov-ing-form')}
@@ -1554,9 +1659,13 @@ function renderIngForm(f){
       Cà phê Arabica 420.000đ/1.000gr → <b>420 đ/gr</b>
     </div>
     <div class="btn-row">
-      <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-ing-form')">Hủy</button>
-      <button class="btn btn-pr" style="flex:2" onclick="saveIng()">💾 Lưu</button>
+      <button class="btn btn-gh" style="flex:1" id="ing-cancel-btn">Hủy</button>
+      <button class="btn btn-pr" style="flex:2" id="ing-save-btn">💾 Lưu</button>
     </div>`;
+  var ic=document.getElementById('ing-cancel-btn');
+  var is=document.getElementById('ing-save-btn');
+  if(ic)ic.addEventListener('click',function(){closeOv('ov-ing-form');});
+  if(is)is.addEventListener('click',saveIng);
 }
 function saveIng(){
   const n=document.getElementById('gf-n').value.trim();if(!n){toast('⚠️ Vui lòng nhập tên',true);return}
@@ -1596,7 +1705,7 @@ function renderPurchForm(){
     <div class="pblock">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:var(--muted)">Dòng ${i+1}</div>
-        ${S.pLines.length>1?`<button onclick="rmPL(${i})" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center">×</button>`:''}
+        ${S.pLines.length>1?`<button data-rm-pl="${i}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center">×</button>`:''}
       </div>
       <select onchange="S.pLines[${i}].ig=this.value" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);margin-bottom:8px;-webkit-appearance:none;outline:none">
         ${S.ings.map(g=>`<option value="${g.id}"${l.ig===g.id?' selected':''}>${g.n} (${g.u})</option>`).join('')}
@@ -1606,15 +1715,24 @@ function renderPurchForm(){
         <div class="fg"><label class="fl">Đơn giá (đ)</label><input class="fi" type="number" value="${l.uc}" placeholder="0" oninput="S.pLines[${i}].uc=this.value;updPT()"/></div>
       </div>
     </div>`).join('')}
-    <button onclick="addPL()" style="width:100%;background:#f0f6ff;color:#3b82f6;border:1px solid #bfdbfe;border-radius:10px;padding:10px;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:12px">+ Thêm dòng</button>
+    <button id="add-pl-btn" style="width:100%;background:#f0f6ff;color:#3b82f6;border:1px solid #bfdbfe;border-radius:10px;padding:10px;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:12px">+ Thêm dòng</button>
     <div class="fg"><label class="fl">Ghi chú</label><input class="fi" value="${S.pNote}" placeholder="Vd: Nhà cung cấp A" oninput="S.pNote=this.value"/></div>
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:14px;font-weight:900">Tổng: <span style="color:#ef4444" id="pt">${fmt(tot)}</span></div>
       <div class="btn-row">
-        <button class="btn btn-gh" onclick="closeOv('ov-purch-form')">Hủy</button>
-        <button class="btn btn-pr" onclick="savePurch()">💾 Lưu</button>
+        <button class="btn btn-gh" id="purch-cancel-btn">Hủy</button>
+        <button class="btn btn-pr" id="purch-save-btn">💾 Lưu</button>
       </div>
     </div>`;
+  var apl=document.getElementById('add-pl-btn');
+  var pcan=document.getElementById('purch-cancel-btn');
+  var psav=document.getElementById('purch-save-btn');
+  if(apl)apl.addEventListener('click',addPL);
+  if(pcan)pcan.addEventListener('click',function(){closeOv('ov-purch-form');});
+  if(psav)psav.addEventListener('click',savePurch);
+  document.querySelectorAll('[data-rm-pl]').forEach(function(b){
+    b.addEventListener('click',function(){rmPL(+b.dataset.rmPl);});
+  });
 }
 function addPL(){S.pLines.push({ig:S.ings[0]?.id||'',qty:'',uc:''});renderPurchForm()}
 function rmPL(i){S.pLines.splice(i,1);renderPurchForm()}
@@ -1662,9 +1780,13 @@ function renderVoidForm(){
     ${cost>0?`<div class="void-warn">⚠️ Thiệt hại ước tính: ${fmt(cost)}</div>`:''}
     <div class="fg"><label class="fl">Lý do huỷ</label><input class="fi" value="${S.vReason}" placeholder="Vd: Hết hạn, bị đổ..." oninput="S.vReason=this.value"/></div>
     <div class="btn-row">
-      <button class="btn btn-gh" style="flex:1" onclick="closeOv('ov-void-form')">Hủy</button>
-      <button class="btn btn-dn" style="flex:2" onclick="saveVoid()">🗑️ Xác nhận huỷ</button>
+      <button class="btn btn-gh" style="flex:1" id="void-cancel-btn">Hủy</button>
+      <button class="btn btn-dn" style="flex:2" id="void-save-btn">🗑️ Xác nhận huỷ</button>
     </div>`;
+  var vcan=document.getElementById('void-cancel-btn');
+  var vsav=document.getElementById('void-save-btn');
+  if(vcan)vcan.addEventListener('click',function(){closeOv('ov-void-form');});
+  if(vsav)vsav.addEventListener('click',saveVoid);
 }
 function saveVoid(){
   if(!S.vQty||!S.vIng){toast('⚠️ Vui lòng nhập đầy đủ',true);return}
