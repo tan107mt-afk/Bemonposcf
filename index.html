@@ -31,9 +31,9 @@ input[type=date]{font-size:14px!important}
 .lw-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease;z-index:0}
 .lw-slide.active{opacity:1}
 /* Dark overlay for readability */
-.lw-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(30,12,5,.55),rgba(92,61,46,.45));z-index:1}
+.lw-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.35) 0%,rgba(0,0,0,.15) 40%,rgba(0,0,0,.5) 100%);z-index:1}
 /* Login content above slides */
-.lw-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:420px}
+.lw-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;padding:0 20px}
 /* Dot indicators */
 .lw-dots{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:3}
 .lw-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35);cursor:pointer;transition:all .3s;border:none}
@@ -75,7 +75,7 @@ input[type=date]{font-size:14px!important}
 
 /* ── Login ── */
 .login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 36px rgba(120,80,20,.12)}
-.login-logo{width:80px;height:80px;display:block;margin:0 auto 16px;object-fit:contain}
+.login-logo{display:block;margin:0 auto 14px;object-fit:contain}
 .login-brand{font-family:'DM Serif Display',serif;font-size:26px;color:var(--brown);font-weight:700;text-align:center}
 .login-sub{font-size:11px;color:var(--sub);text-align:center;letter-spacing:1.5px;margin-top:4px;margin-bottom:28px}
 .login-err{background:#fee2e2;color:#dc2626;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:14px;display:none;text-align:center}
@@ -323,22 +323,28 @@ input[type=date]{font-size:14px!important}
   <div class="lw-overlay"></div>
   <!-- Content -->
   <div class="lw-content">
-    <div style="text-align:center;margin-bottom:24px">
-      <img src="logo.png" class="login-logo" alt="Bemon Coffee" style="filter:drop-shadow(0 4px 16px rgba(0,0,0,.4))"/>
+    <!-- Logo + Brand — luôn hiển thị rõ trên nền tối -->
+    <div style="text-align:center;margin-bottom:28px">
+      <img src="logo.png" class="login-logo"
+        alt="Bemon Coffee"
+        style="filter:drop-shadow(0 4px 24px rgba(0,0,0,.6)) brightness(1.1);width:90px;height:90px"/>
       <div class="login-brand">Bemon Coffee</div>
       <div class="login-sub">QUẢN LÝ BÁN HÀNG</div>
     </div>
+    <!-- Login card — glass morphism -->
     <div class="login-card">
       <div style="font-weight:800;font-size:18px;text-align:center;margin-bottom:20px;color:var(--text)">Đăng nhập</div>
       <div class="fg"><label class="fl">Tên đăng nhập</label><input class="fi" id="lu" type="text" autocomplete="username" autocapitalize="none" autocorrect="off"/></div>
       <div class="fg"><label class="fl">Mật khẩu</label>
         <div class="pass-wrap"><input class="fi fi-pass" id="lp" type="password" autocomplete="current-password"/>
-        <button class="pass-eye" onclick="togglePW()" id="peye">👁️</button></div>
+        <button class="pass-eye" onclick="togglePW()" id="peye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
       </div>
       <div class="login-err" id="lerr"></div>
-      <button class="btn btn-pr btn-full" id="lbtn" onclick="doLogin()" style="font-size:16px;padding:14px;border-radius:14px">🔓 Đăng nhập</button>
+      <button class="btn btn-pr btn-full" id="lbtn" onclick="doLogin()" style="font-size:16px;padding:14px;border-radius:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Đăng nhập</button>
     </div>
-    <div style="text-align:center;margin-top:16px;font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.5px">Bemon Coffee POS · 171 Trương Định</div>
+    <div style="text-align:center;margin-top:18px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.8px">
+      Bemon Coffee POS · 171 Trương Định
+    </div>
   </div>
   <!-- Dot indicators -->
   <div class="lw-dots" id="lw-dots">
@@ -779,7 +785,14 @@ function closeOv(id){document.getElementById(id).classList.remove('on')}
 // ═══════════════════════════════════════
 //  LOGIN
 // ═══════════════════════════════════════
-function togglePW(){const i=document.getElementById('lp');const b=document.getElementById('peye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁️':'🙈'}
+var _svgEye='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+var _svgEyeOff='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function togglePW(){
+  var i=document.getElementById('lp');
+  var b=document.getElementById('peye');
+  i.type=i.type==='password'?'text':'password';
+  b.innerHTML=i.type==='password'?_svgEye:_svgEyeOff;
+}
 const SESSION_KEY='bemon_session_v1';
 function doLogin(){
   const u=document.getElementById('lu').value.trim();
@@ -787,7 +800,7 @@ function doLogin(){
   const err=document.getElementById('lerr');
   const btn=document.getElementById('lbtn');
   if(!u||!p){err.textContent='⚠️ Vui lòng nhập đầy đủ thông tin';err.style.display='block';return}
-  btn.disabled=true;btn.textContent='Đang xác thực...';
+  btn.disabled=true;btn.innerHTML='Đang xác thực...';
   setTimeout(()=>{
     if(u===CRED.u&&p===CRED.p){
       try{localStorage.setItem(SESSION_KEY,'1');}catch(e){}
@@ -797,7 +810,7 @@ function doLogin(){
     }else{
       err.textContent='⚠️ Tên đăng nhập hoặc mật khẩu không đúng';
       err.style.display='block';
-      btn.disabled=false;btn.textContent='🔓 Đăng nhập';
+      btn.disabled=false;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Đăng nhập';
     }
   },600);
 }
@@ -808,7 +821,7 @@ function doLogout(){
   document.getElementById('lu').value='';
   document.getElementById('lp').value='';
   document.getElementById('lerr').style.display='none';
-  const btn=document.getElementById('lbtn');btn.disabled=false;btn.textContent='🔓 Đăng nhập';
+  const btn=document.getElementById('lbtn');btn.disabled=false;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Đăng nhập';
 }
 // ── Auto-login nếu đã có session ──
 (function(){
@@ -936,7 +949,12 @@ function buildHeader(){
     if(S.invTab==='purchase') el.appendChild(mkBtn('+ Nhập','hbtn hbtn-ac',openPurchForm));
     if(S.invTab==='void') el.appendChild(mkBtn('+ Huỷ','hbtn hbtn-rd',openVoidForm));
   }
-  el.appendChild(mkBtn('🔒','hbtn',doLogout));
+    var _logoutBtn=document.createElement('button');
+  _logoutBtn.className='hbtn';
+  _logoutBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  _logoutBtn.title='Đăng xuất';
+  _logoutBtn.onclick=doLogout;
+  el.appendChild(_logoutBtn);
 }
 function mkBtn(txt,cls,fn){const b=document.createElement('button');b.className=cls;b.textContent=txt;if(fn)b.onclick=fn;return b}
 
