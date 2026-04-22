@@ -1729,6 +1729,8 @@ function exportCSV(invoices){
 // ═══════════════════════════════════════
 function buildInventory(){
   buildItemsTab();buildIngsTab();buildPurchTab();buildVoidTab();
+  // Wire tất cả nút trong Kho via event delegation — CSP safe
+  _wireItemBtns();_wireIngBtns();
 }
 function setInvTab(t){
   S.invTab=t;
@@ -1767,14 +1769,16 @@ function buildItemsTab(){
   }).join('');
 }
 function _wireItemBtns(){
-  document.querySelectorAll('[data-item-edit]').forEach(function(b){
-    b.addEventListener('click',function(){openItemEdit(+b.dataset.itemEdit);});
-  });
-  document.querySelectorAll('[data-item-del]').forEach(function(b){
-    b.addEventListener('click',function(){delItem(+b.dataset.itemDel);});
-  });
+  var el=document.getElementById('isub-items');
+  if(!el)return;
+  el.onclick=function(e){
+    var ed=e.target.closest('[data-item-edit]');
+    if(ed){openItemEdit(+ed.dataset.itemEdit);return;}
+    var dl=e.target.closest('[data-item-del]');
+    if(dl){delItem(+dl.dataset.itemDel);}
+  };
 }
-function delItem(id){S.items=S.items.filter(i=>i.id!==id);save();buildItemsTab();buildMenuGrid()}
+function delItem(id){S.items=S.items.filter(i=>i.id!==id);save();buildItemsTab();buildMenuGrid();_wireItemBtns();}
 function openItemForm(){S.itemEditId=null;document.getElementById('item-form-title').textContent='➕ Thêm mặt hàng';renderItemForm({n:'',cat:'Robusta',pM:'',pL:'',cM:'',cL:''});openOv('ov-item-form')}
 function openItemEdit(id){const item=S.items.find(i=>i.id===id);if(!item)return;S.itemEditId=id;document.getElementById('item-form-title').textContent='✏️ Chỉnh sửa';renderItemForm({n:item.n,cat:item.cat,pM:item.pM||'',pL:item.pL||'',cM:item.cM||'',cL:item.cL||''});openOv('ov-item-form')}
 function renderItemForm(f){
@@ -1806,7 +1810,7 @@ function saveItem(){
     cL:document.getElementById('if-cL').value?+document.getElementById('if-cL').value:null};
   if(S.itemEditId!=null)S.items=S.items.map(i=>i.id===S.itemEditId?{...i,...obj}:i);
   else S.items=[...S.items,{...obj,id:Date.now()}];
-  closeOv('ov-item-form');save();buildItemsTab();buildMenuGrid();toast('✓ Đã lưu mặt hàng');
+  closeOv('ov-item-form');save();buildItemsTab();buildMenuGrid();_wireItemBtns();toast('✓ Đã lưu mặt hàng');
 }
 
 // Ingredients tab
@@ -1841,14 +1845,16 @@ function buildIngsTab(){
   }).join('');
 }
 function _wireIngBtns(){
-  document.querySelectorAll('[data-ing-edit]').forEach(function(b){
-    b.addEventListener('click',function(){openIngEdit(b.dataset.ingEdit);});
-  });
-  document.querySelectorAll('[data-ing-del]').forEach(function(b){
-    b.addEventListener('click',function(){delIng(b.dataset.ingDel);});
-  });
+  var el=document.getElementById('isub-ingredients');
+  if(!el)return;
+  el.onclick=function(e){
+    var ed=e.target.closest('[data-ing-edit]');
+    if(ed){openIngEdit(ed.dataset.ingEdit);return;}
+    var dl=e.target.closest('[data-ing-del]');
+    if(dl){delIng(dl.dataset.ingDel);}
+  };
 }
-function delIng(id){S.ings=S.ings.filter(g=>g.id!==id);save();buildIngsTab()}
+function delIng(id){S.ings=S.ings.filter(g=>g.id!==id);save();buildIngsTab();_wireIngBtns();}
 function openIngForm(){S.ingEditId=null;document.getElementById('ing-form-title').textContent='➕ Thêm nguyên liệu';renderIngForm({n:'',u:'gram',cp:'',st:'',note:''});openOv('ov-ing-form')}
 function openIngEdit(id){const g=S.ings.find(x=>x.id===id);if(!g)return;S.ingEditId=id;document.getElementById('ing-form-title').textContent='✏️ Chỉnh sửa';renderIngForm({n:g.n,u:g.u,cp:g.cp,st:g.st,note:g.note||''});openOv('ov-ing-form')}
 function renderIngForm(f){
@@ -1877,7 +1883,7 @@ function saveIng(){
   const obj={n,u:document.getElementById('gf-u').value,cp:+document.getElementById('gf-cp').value,st:+document.getElementById('gf-st').value,note:document.getElementById('gf-note').value.trim()};
   if(S.ingEditId!=null)S.ings=S.ings.map(g=>g.id===S.ingEditId?{...g,...obj}:g);
   else S.ings=[...S.ings,{...obj,id:'i'+Date.now()}];
-  closeOv('ov-ing-form');save();buildIngsTab();toast('✓ Đã lưu nguyên liệu');
+  closeOv('ov-ing-form');save();buildIngsTab();_wireIngBtns();toast('✓ Đã lưu nguyên liệu');
 }
 
 // Purchase tab
@@ -1948,7 +1954,7 @@ function savePurch(){
   const tot=lines.reduce((s,l)=>s+l.total,0);
   S.purchases=[{id:uid(),date:today(),lines,total:tot,note:S.pNote},...S.purchases];
   S.ings=S.ings.map(g=>{const l=lines.find(l=>l.ig===g.id);if(!l)return g;const nc=(g.st*g.cp+l.total)/(g.st+l.qty);return{...g,st:g.st+l.qty,cp:nc}});
-  closeOv('ov-purch-form');save();buildIngsTab();buildPurchTab();toast('✓ Đã lưu phiếu nhập hàng');
+  closeOv('ov-purch-form');save();buildIngsTab();buildPurchTab();_wireIngBtns();toast('✓ Đã lưu phiếu nhập hàng');
 }
 
 // Void tab
@@ -1999,7 +2005,7 @@ function saveVoid(){
   S.voids=[{id:uid(),date:today(),ingId:g.id,ingName:g.n,unit:g.u,qty,cost:qty*g.cp,reason:S.vReason},...S.voids];
   S.ings=S.ings.map(x=>x.id===g.id?{...x,st:Math.max(0,x.st-qty)}:x);
   S.vQty='';S.vReason='';
-  closeOv('ov-void-form');save();buildIngsTab();buildVoidTab();toast('✓ Đã lưu phiếu huỷ hàng');
+  closeOv('ov-void-form');save();buildIngsTab();buildVoidTab();_wireIngBtns();toast('✓ Đã lưu phiếu huỷ hàng');
 }
 </script>
 </body>
