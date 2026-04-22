@@ -665,12 +665,35 @@ function loadDB(){
 function save(){ saveDB(); }
 
 // Xoá toàn bộ giao dịch (giữ menu & nguyên liệu)
+function _doWipe(){
+  S.orders=[];S.purchases=[];S.voids=[];S.cart=[];S.pm='cash';
+  try{
+    var clean={orders:[],purchases:[],voids:[],cart:[],pm:'cash',_saved:Date.now(),_ver:3};
+    localStorage.setItem(DB_KEY,JSON.stringify(clean));
+  }catch(e){}
+  clearTimeout(_fbWriteTimer);
+  _fbLastWrite=Date.now();
+  _DB.collection(_COL).doc(_DOC).delete()
+    .then(function(){console.log('☁️ Đã xoá cloud');})
+    .catch(function(e){console.warn('Lỗi xoá cloud:',e);});
+  buildHeader();buildMenuGrid();
+  if(S.tab==='report')buildReport();
+  if(S.tab==='invoices')buildInvoices();
+  toast('✅ Đã xoá sạch — sẵn sàng bán thật!');
+}
+
 function clearAllOrders(){
-  if(!confirm('Xoá toàn bộ hoá đơn, lịch sử nhập hàng và huỷ hàng?\n\nMenu và nguyên liệu sẽ được giữ nguyên.')) return;
-  S.orders=[];S.purchases=[];S.voids=[];S.cart=[];
-  save();
-  buildHeader();
-  toast('✅ Đã xoá toàn bộ dữ liệu giao dịch');
+  // Bước 1: Xác nhận
+  if(!confirm('⚠️ XOÁ TOÀN BỘ đơn hàng & báo cáo?\n\nThao tác này không thể hoàn tác.\nMenu & nguyên liệu được giữ nguyên.')) return;
+  // Bước 2: Yêu cầu mật khẩu
+  var pw=prompt('Ỹ Nhập mật khẩu đăng nhập để xác nhận xoá:');
+  if(pw===null)return;// hủy
+  if(pw!==CRED.p){
+    toast('❌ Mật khẩu không đúng — huỷ xoá',true);
+    return;
+  }
+  // Bước 3: Xực thực hiện
+  _doWipe();
 }
 
 // ═══════════════════════════════════════
@@ -1338,6 +1361,7 @@ function buildReport(){
       </div>
       <div class="rpt-controls">
         <div class="mode-toggle" style="margin-bottom:0">${[['range','📅 Nhanh'],['custom','🗓️ Tuỳ chọn']].map(([m,lb])=>`<button class="mt-btn${S.rMode===m?' on':''}" data-rm="${m}">${lb}</button>`).join('')}</div>
+        <button id="rpt-clear-btn" style="background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>Xoá dữ liệu</button>
       </div>
     </div>
 
@@ -1447,6 +1471,8 @@ function buildReport(){
 function setRM(m){S.rMode=m;buildReport()}
 function setRR(n){S.rRange=n;buildReport()}
 function _wireReportBtns(){
+  var clrBtn=document.getElementById('rpt-clear-btn');
+  if(clrBtn)clrBtn.addEventListener('click',clearAllOrders);
   // Wire report mode/range buttons after render
   document.querySelectorAll('[data-rm]').forEach(function(b){
     b.addEventListener('click',function(){setRM(b.dataset.rm);});
