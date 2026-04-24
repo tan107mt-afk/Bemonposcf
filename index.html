@@ -508,26 +508,41 @@ const _DB=firebase.firestore();
 const _COL="bemon_pos_data",_DOC="store_v1";
 let _fbUnsub=null,_fbLastWrite=0,_fbWriteTimer=null;
 
-// Ghi lên cloud (debounce 1.5s)
+// Ghi lên cloud — deepcopy để tránh mutation bug
 function fbSave(payload){
+  // Deepcopy để snapshot không bị ảnh hưởng bởi thay đổi sau này
+  var snap;
+  try{snap=JSON.parse(JSON.stringify(payload));}catch(e){return;}
+  snap._ts=Date.now();
+  _fbLastWrite=snap._ts; // Đặt NGAY trước debounce để block echo sớm
   clearTimeout(_fbWriteTimer);
   _fbWriteTimer=setTimeout(function(){
-    _fbLastWrite=Date.now();
-    payload._ts=_fbLastWrite;
-    _DB.collection(_COL).doc(_DOC).set(payload)
-      .then(function(){console.log("☁️ Đã sync cloud");})
-      .catch(function(e){console.warn("⚠️ Lỗi cloud:",e);});
-  },1500);
+    snap._ts=Date.now(); // Cập nhật lại timestamp thực tế khi ghi
+    _fbLastWrite=snap._ts;
+    _DB.collection(_COL).doc(_DOC).set(snap)
+      .then(function(){console.log('☁️ Synced cloud at '+new Date(_fbLastWrite).toLocaleTimeString());})
+      .catch(function(e){console.warn('⚠️ Cloud write failed:',e);});
+  },1200);
 }
 
-// Lắng nghe realtime
+// Lắng nghe realtime — chỉ apply nếu cloud THỰC SỰ mới hơn
 function fbListen(cb){
   if(_fbUnsub)_fbUnsub();
   _fbUnsub=_DB.collection(_COL).doc(_DOC)
     .onSnapshot(function(snap){
-      if(Date.now()-_fbLastWrite<2500)return;// bỏ qua echo
-      if(snap.exists){var d=snap.data();if(d&&d._ts)cb(d);}
-    },function(e){console.warn("Listen err:",e);});
+      if(!snap.exists)return;
+      var d=snap.data();
+      if(!d||!d._ts)return;
+      // Bỏ qua nếu chính mình vừa ghi (trong vòng 5 giây)
+      if(d._ts<=_fbLastWrite)return;
+      // Chỉ apply nếu cloud thực sự mới hơn local
+      var localTs=0;
+      try{var lr=localStorage.getItem(DB_KEY);
+        if(lr){var lp=JSON.parse(lr);localTs=lp._saved||0;}
+      }catch(ex){}
+      if(d._ts<=localTs)return; // cloud cũ hơn local → bỏ qua
+      cb(d);
+    },function(e){console.warn('Listen err:',e);});
 }
 
 // ═══════════════════════════════════════
@@ -694,17 +709,18 @@ const DB_KEY='bemon_pos_v3';
 
 function saveDB(){
   try{
-    const data={
-      orders:   S.orders,
-      purchases:S.purchases,
-      voids:    S.voids,
-      cart:     S.cart,
+    var now=Date.now();
+    var data={
+      orders:   S.orders.slice(),    // shallow copy tránh mutation
+      purchases:S.purchases.slice(),
+      voids:    S.voids.slice(),
+      cart:     S.cart.slice(),
       pm:       S.pm,
-      _saved:   Date.now(),
+      _saved:   now,
       _ver:     3,
     };
     localStorage.setItem(DB_KEY, JSON.stringify(data));
-    fbSave(data); // sync cloud
+    fbSave(data); // sync cloud (deepcopy bên trong fbSave)
   }catch(e){console.warn('Lỗi lưu dữ liệu:',e);}
 }
 
@@ -843,12 +859,31 @@ setInterval(()=>{if(document.getElementById('app').style.display!=='none')saveDB
 //  INIT
 // ═══════════════════════════════════════
 function _applyCloudData(d){
-  if(d.orders    &&Array.isArray(d.orders))    S.orders    =d.orders.filter(within30);
-  if(d.purchases &&Array.isArray(d.purchases)) S.purchases =d.purchases;
-  if(d.voids     &&Array.isArray(d.voids))     S.voids     =d.voids;
-  if(d.cart      &&Array.isArray(d.cart))      S.cart      =d.cart;
-  if(d.pm) S.pm=d.pm;
-  try{localStorage.setItem(DB_KEY,JSON.stringify(Object.assign({},d,{_ver:3})));}catch(e){}
+  // MERGE orders: gộp local + cloud, loại duplicate theo id
+  if(d.orders&&Array.isArray(d.orders)){
+    var cloudOrders=d.orders.filter(within30);
+    var localIds=new Set(S.orders.map(function(o){return o.id;}));
+    var cloudIds=new Set(cloudOrders.map(function(o){return o.id;}));
+    // Giữ local orders chưa có trên cloud (chưa sync xong)
+    var localOnly=S.orders.filter(function(o){return !cloudIds.has(o.id);});
+    // Gộp: cloud orders + local-only orders, sort by id desc (mới nhất trước)
+    S.orders=[...cloudOrders,...localOnly]
+      .filter(within30)
+      .sort(function(a,b){return b.id-a.id;});
+  }
+  if(d.purchases&&Array.isArray(d.purchases)) S.purchases=d.purchases;
+  if(d.voids    &&Array.isArray(d.voids))     S.voids    =d.voids;
+  // Chỉ apply cart từ cloud nếu local cart trống
+  if(d.cart&&Array.isArray(d.cart)&&S.cart.length===0) S.cart=d.cart;
+  if(d.pm&&!S.cart.length) S.pm=d.pm;
+  // Lưu lại vào localStorage ngay
+  try{
+    var toSave=Object.assign({},d,{
+      orders:S.orders,cart:S.cart,pm:S.pm,
+      _saved:Date.now(),_ver:3
+    });
+    localStorage.setItem(DB_KEY,JSON.stringify(toSave));
+  }catch(e){}
 }
 
 function initApp(){
@@ -873,12 +908,15 @@ function initApp(){
       var d=snap.data();
       var localTs=0;
       try{var lr=localStorage.getItem(DB_KEY);if(lr)localTs=(JSON.parse(lr)._saved||0);}catch(ex){}
-      if(d&&d._saved&&d._saved>localTs){
+      // Dùng _ts (timestamp ghi cloud) thay vì _saved để so sánh chính xác hơn
+      var cloudTs=d._ts||d._saved||0;
+      if(d&&cloudTs>localTs){
         _applyCloudData(d);
         buildHeader();buildMenuGrid();
         if(S.tab==='report')buildReport();
         if(S.tab==='invoices')buildInvoices();
-        toast('☁️ Đã đồng bộ từ cloud');
+        if(S.orders.length>0)
+          toast('☁️ Đã đồng bộ: '+S.orders.length+' hoá đơn');
       }else if(restored&&S.orders.length>0){
         setTimeout(function(){toast('✅ Đã khôi phục '+S.orders.length+' hoá đơn');},400);
       }
